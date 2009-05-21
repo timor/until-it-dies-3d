@@ -1,8 +1,8 @@
 (asdf:defsystem until-it-dies
   :version "0"
   :description "(Shoot It) Until It Dies"
-  :maintainer "Josh <sykopomp@Dagon>"
-  :author "Josh <sykopomp@Dagon>"
+  :maintainer "Josh <sykopomp@sykosomatic.org>"
+  :author "Josh <sykopomp@sykosomatic.org>"
   :licence "BSD-style"
   :depends-on (cl-opengl lispbuilder-sdl lispbuilder-sdl-image lispbuilder-sdl-mixer sheeple)
   :long-description "Until It Dies is mostly just a rewrite of Yashmup, but Sheeple-based, 
@@ -22,7 +22,8 @@
 	     (:module opengl
 		      :serial t
 		      :components
-		      ((:file "opengl")
+		      ((:file "hacks")
+		       (:file "opengl")
 		       (:file "texture")
 		       (:file "particles")))
 	     (:file "config")
