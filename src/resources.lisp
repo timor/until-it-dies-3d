@@ -75,7 +75,7 @@
 ;;; File textures
 ;;;
 (defsheep =file-texture= (=file-resource= =texture=)
-  ())
+  ((filepath "/home/sykopomp/hackery/lisp/until-it-dies/res/lisplogo_alien_256.png")))
 
 (defmessage load-resource ((texture =file-texture=))
   (when (tex-id texture)
