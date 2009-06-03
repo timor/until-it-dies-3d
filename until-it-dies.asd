@@ -4,7 +4,7 @@
   :maintainer "Josh <sykopomp@sykosomatic.org>"
   :author "Josh <sykopomp@sykosomatic.org>"
   :licence "BSD-style"
-  :depends-on (cl-opengl lispbuilder-sdl lispbuilder-sdl-image lispbuilder-sdl-mixer sheeple)
+  :depends-on (cl-opengl cl-devil lispbuilder-sdl lispbuilder-sdl-mixer sheeple)
   :long-description "Until It Dies is based on the code developed in Yashmup, with some improvements,
                      including opengl-graphics, and Sheeple as an object system."
   :serial t
