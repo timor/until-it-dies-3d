@@ -1,7 +1,12 @@
+About 3D
+========
+This is a experimental fork targeted at adding 3d support to until-it-dies
+There is not much to see yet, and chances are what can be seen is pretty slow.
+If you want to see something, load test.lisp in the 3d directory and run the sample engine there
+
+
 About
 =====
-This is a experimental fork targeted at adding 3d support to until-it-dies
-
 
 Until It Dies is a simple game and application engine designed to make it damn easy to get a window
 up to display all the shiny things you might want to do. It has support for image loading, sound,
