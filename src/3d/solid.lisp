@@ -14,16 +14,17 @@
    face-normals
    vertex-normals))
 
-;;TODO: change the face-normals into vertex normals once done
+;;DOING: change the face-normals into vertex normals once done
 (defreply draw ((m =meshed=) &key)
-	  (with-properties (vertices faces (normals face-normals)) m
+	  (with-properties (vertices faces (normals vertex-normals)) m
 	    (loop for flist across faces 
-	       for normal across normals
+	       ;;for normal across normals
 	       do 
 	       (gl:with-primitive :polygon
-		 (gl:normal (svref normal 0) (svref normal 1) (svref normal 2))
 		 (loop for f across flist do
-		      (let ((v (svref vertices f)))
+		      (let ((v (svref vertices f))
+			    (n (svref normals f)))
+			(gl:normal (svref n 0) (svref n 1) (svref n 2))
 			(gl:vertex (svref v 0) (svref v 1) (svref v 2))))
 		 ))))
 
@@ -45,21 +46,23 @@
       (cons found 
 	    (positions item sequence :from-end from-end :start (+ 1 found) :end end :key key :test test :test-not test-not)))))
 
-;;TODO: normals should be fixed for smooth shading, test old normals with flat shading, though
+;;DOING: normals should be fixed for smooth shading, test old normals with flat shading, though
+;; DOING: normals look really bad, debug that
 ;;DONE: fix index loop here
 (defreply auto-normals ((m =meshed=))
-	  (with-properties (vertices faces face-normals vertex-normals) m
+	  (with-properties (vertices faces face-normals vertex-normals edgeloop-normals) m
 	    (loop for ivec across faces
 	       collect (apply #'3p-normal (map 'list (lambda (i)
-						    (svref vertices i))
-						  ivec)) into normals
+						       (svref vertices i))
+					       ivec)) into normals
 	       finally (setf face-normals (coerce normals 'simple-vector)))
 	    ;;loop over all vertex indices, get all the faces that contain the vertex and average their normals
 	    (loop for vi from 0 below (length vertices)
-		 for ilist = (positions vi faces :test 'find)
-		 collect (loop for ni in ilist
-			      collect (svref face-normals ni) into nlist
-			    finally return (normalize! (map #'+))))))
+	       for ilist = (positions vi faces :test 'find)
+	       collect (loop for ni in ilist
+			  collect (svref face-normals ni) into nlist
+			  finally (return (normalize! (apply #'vector+ nlist)))) into vnorms
+	       finally (setf vertex-normals (coerce vnorms 'simple-vector)))))
 
 
 ;;bring out the lathe===============================================
