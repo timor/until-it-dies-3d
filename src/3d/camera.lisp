@@ -23,7 +23,7 @@
    (up (3dp 0 0 1))
    (fov 45)
    (aspect 1)
-   ;;following are just copied from 3dsheep, need to updated when resized
+   ;;following are just copied from 3dsheep, need to be updated when resized
    width
    height))
 

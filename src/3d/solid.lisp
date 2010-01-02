@@ -4,16 +4,19 @@
 ;;TODO: finish rotary
 ;; DONE: basic lathing functionality
 ;; TODO: need to implement round shading by switching to vertex normals
+;;TODO: think about putting faces into separate data-type, letting meshed take care of extracting information
 
 (in-package #:uid)
 
 (defproto =meshed= (=3dobject=)
   (vertices ;;make-point thingies!!!
    faces
-   normals))
+   face-normals
+   vertex-normals))
 
+;;TODO: change the face-normals into vertex normals once done
 (defreply draw ((m =meshed=) &key)
-	  (with-properties (vertices faces normals) m
+	  (with-properties (vertices faces (normals face-normals)) m
 	    (loop for flist across faces 
 	       for normal across normals
 	       do 
@@ -35,16 +38,31 @@
    )
   )
 
-;;TODO: normals should be fixed for smooth shading, test old normals with flat shading
+;;UTIL:
+(defun positions (item sequence &key from-end (start 0) end key test test-not)
+  (let ((found (position item sequence :from-end from-end :start start :end end :key key :test test :test-not test-not)))
+    (when found
+      (cons found 
+	    (positions item sequence :from-end from-end :start (+ 1 found) :end end :key key :test test :test-not test-not)))))
+
+;;TODO: normals should be fixed for smooth shading, test old normals with flat shading, though
 ;;DONE: fix index loop here
 (defreply auto-normals ((m =meshed=))
-	  (with-properties (vertices faces) m
+	  (with-properties (vertices faces face-normals vertex-normals) m
 	    (loop for ivec across faces
 	       collect (apply #'3p-normal (map 'list (lambda (i)
 						    (svref vertices i))
 						  ivec)) into normals
-	       finally (setf (normals m) (coerce normals 'simple-vector)))))
+	       finally (setf face-normals (coerce normals 'simple-vector)))
+	    ;;loop over all vertex indices, get all the faces that contain the vertex and average their normals
+	    (loop for vi from 0 below (length vertices)
+		 for ilist = (positions vi faces :test 'find)
+		 collect (loop for ni in ilist
+			      collect (svref face-normals ni) into nlist
+			    finally return (normalize! (map #'+))))))
 
+
+;;bring out the lathe===============================================
 (defproto =rotary= (=meshed=)
   ((curve) ;;2d vertices in x-z plane
    (numsegs 5)))
