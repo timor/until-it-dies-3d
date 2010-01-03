@@ -1,0 +1,10 @@
+* Compilation abstraction with display lists as first implementation
+* Adding Topoplogy/Geometry abstractions*
+* google sketchup plugin to output sexp representations (exporter to until-it-dies.3d)
+
+
+
+long-term:
+* shaders
+* vertex buffers
+* optimization

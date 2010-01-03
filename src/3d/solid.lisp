@@ -4,7 +4,9 @@
 ;;TODO: finish rotary
 ;; DONE: basic lathing functionality
 ;; TODO: need to implement round shading by switching to vertex normals
-;;TODO: think about putting faces into separate data-type, letting meshed take care of extracting information
+
+;;DONE: think about putting faces into separate data-type, letting meshed take care of extracting information
+;; DOING: put the new datatype in here
 
 (in-package #:uid)
 

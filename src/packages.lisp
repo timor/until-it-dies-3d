@@ -2,8 +2,8 @@
 
 (defpackage until-it-dies
   (:nicknames :uid)
-  (:use :cl :sheeple)
-  (:shadow :step)
+  (:use :cl :sheeple :alexandria)
+  (:shadow :step :clamp) ;;i like my own clamp a bit better
   (:export
 
    ;; time

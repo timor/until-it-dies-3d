@@ -4,7 +4,7 @@
   :maintainer "tim.or@web.de"
   :author "tim.or@web.de"
   :licence "BSD-style"
-  :depends-on (until-it-dies.base cl-glu cl-opengl)
+  :depends-on (until-it-dies.base cl-glu cl-opengl alexandria)
   :components
   ((:module "src"
             :components
