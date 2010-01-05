@@ -6,6 +6,9 @@
 
 (in-package #:uid)
 
+;;TOOD: move somewhere else
+(defun printv (thing)
+  (print-sheeple-object-verbose thing *standard-output*))
 
 (defproto =vertex= ()
   (point ;;these should be a vector, and a 3d one too
@@ -23,7 +26,8 @@
    end
    smoothp
    ))
-(defreply print-sheeple-object ((e =edge=) (stream =stream=))
+
+(defreply print-sheeple-object-verbose ((e =edge=) (stream =stream=))
 	  (print-unreadable-object (e stream :identity t)
 	    (format stream (if (smoothp e)
 			       "Edge ( ~a,~a )"
@@ -54,11 +58,11 @@
    ))
 
 ;;perhaps not the best idea to print the verts, but this is best describing the face, after all
-(defreply print-sheeple-object ((f =face=) (stream =stream=))
+(defreply print-sheeple-object-verbose ((f =face=) (stream =stream=))
 	  (print-unreadable-object (f stream :identity t)
 	    (format stream "Face [~a~{,~a~}]"
-		    (point (first (vertices f)))
-		    (mapcar 'point (rest (vertices f))))))
+		    (ignore-errors (point (first (vertices f))))
+		    (ignore-errors (mapcar 'point (rest (vertices f)))))))
 
 ;;TODO: maybe-reversed
 (defreply normal ((f =face=))
@@ -154,6 +158,7 @@
 	      (print newface)
 	      (print "oldface:")
 	      (print oldface)
+	      (print "have common:")
 	      (print common-vertices)
 	      (let* ((v1 (first common-vertices))
 		     (v2 (second common-vertices))

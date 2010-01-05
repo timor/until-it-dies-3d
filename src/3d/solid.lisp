@@ -121,49 +121,57 @@
 			   for ovx = (svref ov 0)
 			   for ovz = (svref ov 1)
 			   for i from 0 by 1
-			   collect (let ((new-vertex (create =vertex= :point (vector (* (cos angle) ovx) (* (sin angle) ovx) ovz))))
-				     (setf (property-value new-vertex 'rotary-angle) angle
-					   (property-value new-vertex 'rotary-original-point) ov
-					   (property-value new-vertex 'rotary-point-number) (+ vnum i))
-				     new-vertex)) into verts
+			   collect
+			     (let ((new-vertex
+				    (create =vertex=
+					    :point (vector (* (cos angle) ovx)
+							   (* (sin angle) ovx)
+							   ovz))))
+			       (setf (property-value new-vertex 'rotary-angle) angle
+				     (property-value new-vertex 'rotary-original-point) ov
+				     (property-value new-vertex 'rotary-point-number) (+ vnum i))
+			       new-vertex)) into verts
 		 finally (setf vertices verts))
 	      ;;second run: build up the faces
 	      (setf vertices (append vertices (list zenith nadir)))
 	      (loop
+		 with fs = ()
 		 for vnum from 0 by clength
 		 for angle from 0 below (* 2 pi) by (/ (* 2 pi) numsegs)
 		 ;;collect faces (topology stuff)
-		 append (loop
+		 do (loop
 			   for i from 0 to clength
 			   for j from (1-  vnum) by 1
-			   collect (let ((new-face
-					  (cond ((= i 0)
-						 (create =face= :vertices
-							 (list
-							  zenith
-							  (nth (1+  j) vertices)
-							  (nth (mod (+ 1 j clength) numverts) vertices))
-							 :neighbors fs
-							 ))
-						((= i clength)
-						 (create =face= :vertices 
-							 (list
-							  nadir
-							  (nth (mod (+ j clength) numverts) vertices)
-							  (nth j vertices))
-							 :neighbors fs
-							 ))
-						(t
-						 (create =face= :vertices
-							 (mapcar (fun (nth _ vertices))
-								 (list
-								  j
-								  (+ j 1)
-								  (mod (+ j clength 1) numverts)
-								  (mod (+ j clength) numverts)))
-							 :neighbors fs
-							 )))))
-				     (setf (property-value new-face 'rotary-curve-segment) clength)
-				     new-face)) into fs
+			   do
+			     (let ((new-face
+				    (cond ((= i 0)
+					   (create =face= :vertices
+						   (list
+						    zenith
+						    (nth (1+  j) vertices)
+						    (nth (mod (+ 1 j clength) numverts) vertices))
+						   :neighbors fs
+						   ))
+					  ((= i clength)
+					   (create =face= :vertices 
+						   (list
+						    nadir
+						    (nth (mod (+ j clength) numverts) vertices)
+						    (nth j vertices))
+						   :neighbors fs
+						   ))
+					  (t
+					   (create =face= :vertices
+						   (mapcar (fun (nth _ vertices))
+							   (list
+							    j
+							    (+ j 1)
+							    (mod (+ j clength 1) numverts)
+							    (mod (+ j clength) numverts)))
+						   :neighbors fs
+						   )))))
+			       (setf (property-value new-face 'rotary-curve-segment) clength)
+			       (push new-face fs)))
 		 finally (setf faces fs))
-	      (setf (faces r) faces))))
+	      (setf (faces r) faces)))
+	  r)
