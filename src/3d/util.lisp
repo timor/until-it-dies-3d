@@ -1,4 +1,8 @@
 ;;; -*- Mode:Lisp; Syntax:ANSI-Common-Lisp; Coding:utf-8 -*-
+;;TODO: the tolerance stuff should probably be put in a different file
+;;TODO: try to make a new type for precision-limited numbers
+;; about tolerances: whenever some point in space is created, 
+
 
 (in-package #:uid)
 
@@ -21,6 +25,17 @@
       (cons found 
 	    (positions item sequence :from-end from-end :start (+ 1 found) :end end :key key :test test :test-not test-not)))))
 
+
+
+;;DONE: need to normalize normals :)
+(defun 3p-normal (p1 p2 p3 &optional pin)
+  "calculate the normal for the given points, where points are in ccw order, or alternatively pi is a point facing away from the normals"
+  (declare (ignorable pin))
+  (normalize!
+   (cross-product-3d (vector-between p1 p2)
+		     (vector-between p2 p3))
+   )
+  )
 
 
 ;;math
