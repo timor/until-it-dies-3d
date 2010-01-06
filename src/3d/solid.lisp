@@ -25,16 +25,14 @@
 
 ;;DOING: change the face-normals into vertex normals once done
 (defreply draw ((m =meshed=) &key)
-	  (with-properties (vertices faces (normals vertex-normals)) m
-	    (loop for flist across faces 
+	  (with-properties (faces) m
+	    (loop for f in faces 
 	       ;;for normal across normals
 	       do 
 	       (gl:with-primitive :polygon
-		 (loop for f across flist do
-		      (let ((v (svref vertices f))
-			    (n (svref normals f)))
-			(gl:normal (svref n 0) (svref n 1) (svref n 2))
-			(gl:vertex (svref v 0) (svref v 1) (svref v 2))))
+		 (loop for v in (vertices f) do
+		      (apply #'gl:normal (coerce (vertex-normal-in v m) 'list))
+		      (apply #'gl:vertex (coerce (point v) 'list)))
 		 ))))
 
 ;;TODO: WTF!!!!!!!!!!!!!!!!!!!!!
@@ -46,11 +44,14 @@
 		 (when (member vertex (vertices f))
 		   ;;check if we have any edge that contains the vertex and is smooth
 		   (print vertex)
-		   (loop for e in (edges f) do 
+		   (print (edges f))
+		   (loop for e in (edges f) do
 			(when (and (used-by vertex e)
 				   (smoothp e))
+			  (print 'yay)
 			  (pushnew f concerned-faces)))))
 	    ;;now interpolate the face-normals
+	    (assert (> (length concerned-faces) 0))
 	    (print concerned-faces)
 	    (normalize! (apply #'map 'vector #'+ (mapcar #'normal concerned-faces)))
 	    ))

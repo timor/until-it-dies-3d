@@ -56,7 +56,7 @@
 (change-view-to-camera tv)
 
 (defreply update ((cam tv) dt &key)
-	  (orbit-by cam 0 (* dt 50) 0))
+	  (orbit-by cam 0 (* dt 10) 0))
 
 (defreply update ((eng te) dt &key)
 	  (update (current-3dview te) dt))
