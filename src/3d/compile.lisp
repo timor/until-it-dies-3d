@@ -26,15 +26,13 @@
    locks ;;this gets updated when added as content to something
    ))
 
-(defreply display-list ((c =compilable=))
-	  (gl-list-proxy-id (display-list-proxy c)))
-
 (defreply compile-display ((c =compilable=))
-	  (setf (valid c) nil)
-	  (if (null (display-list c))
+	  (if (null (display-list-id c))
 	      (error "trying to compile object without valid display list")
-	      (gl:with-new-list (display-list c) :compile
-		(draw c :directly t))))
+	      (progn
+		(gl:with-new-list ((display-list-id c) :compile)
+		  (draw c :directly t))
+		(setf (need-recompile c) nil))))
 
 ;;directly: dont check for recompile, would get recursive
 (defreply draw :around ((o =compilable=) &key directly)
@@ -60,17 +58,17 @@
 
 
 ;;when adding to a container the first time, allocate a display list
-(defreply add-content :before ((container =container=) (object =compilable=))
+(defreply add-content :before ((container =container=) (object =compilable=) &key)
 	  (when (null (locks object))
-	    (if (display-list c)
+	    (if (display-list-id object)
 		(error "have a display list id, but no locks, someone was a bad boy!")
 		(push (lambda ()
-			(setf (display-list c) (%gl:gen-lists 1)))
+			(setf (display-list-id object) (%gl:gen-lists 1)))
 		      (hooks container))))
 	  (pushnew container (locks object)))
 
 ;;when removing from container, maybe release the display list
-(defreply remove-content :after ((container =container=) (object =compilable=))
+(defreply remove-content :after ((container =container=) (object =compilable=) &key)
 	  (with-properties (locks) object
 	    (if (null (locks object))
 		(let ((id (display-list-id object)))

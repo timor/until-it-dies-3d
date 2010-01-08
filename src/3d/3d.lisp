@@ -53,12 +53,6 @@
 	  (dolist (li l)
 	    (draw li)))
 
-(defreply add-content ((e =3dsheep=) (o =3dobject=) &key (view :3d))
-	  "this is the preferred way of adding things to an engine, view can be :2d or :3d"
-	  (ecase view
-	    (:2d (pushnew e (2d-content o)))
-	    (:3d (pushnew e (3d-content o)))))
-
 (defreply remove-content ((e =3dsheep=) (o =3dobject=) &key)
 	  "remove content from 2d and 3d view of engine"
 	  (setf (2d-content e) (remove o (2d-content e)))
@@ -72,6 +66,11 @@
    (y 0)
    (z 0)))
 
+(defreply add-content ((e =3dsheep=) (o =3dobject=) &key (view :3d))
+	  "this is the preferred way of adding things to an engine, view can be :2d or :3d"
+	  (ecase view
+	    (:2d (pushnew o (2d-content e)))
+	    (:3d (pushnew o (3d-content e)))))
 
 (defreply move-to ((o =3dobject=) pos)
   (with-properties (x y z) o

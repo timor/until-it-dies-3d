@@ -12,8 +12,8 @@
                       :components
                       ((:file "util")
                        (:file "messages")
-		       (:file "3d")
-		       (:file "camera")
-		       (:file "topology")
-		       (:file "solid")
-		       (:file "compile"))))))
+		       (:file "3d" :depends-on ("messages" "util"))
+		       (:file "camera" :depends-on ("3d"))
+		       (:file "topology" :depends-on ("3d"))
+		       (:file "solid" :depends-on ("3d" "topology"))
+		       (:file "compile" :depends-on ("3d"))))))))

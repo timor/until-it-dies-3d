@@ -101,3 +101,6 @@
 	  (* c (point-z point)))
        d :tolerance tolerance)))
 
+;;;;ordered number set:
+;;(defun find-gap-in-ons (ons)
+;;  "returns the first number that is in a gap")

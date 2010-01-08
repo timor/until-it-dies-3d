@@ -28,8 +28,9 @@
 
 
 ;;(pushnew *axes* (3d-content te))
-(defreply draw :before ((e te) &key)
-	  (draw *axes*))
+(add-content te *axes*)
+;;(defreply draw :before ((e te) &key)
+;;	  (draw *axes*))
 
 (defparameter c1 (list
 	    #(1 0)
