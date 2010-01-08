@@ -3,10 +3,14 @@
 ;;simple solid body creation, lotsa stuff can be made outa that
 ;;TODO: finish rotary
 ;; DONE: basic lathing functionality
-;; TODO: need to implement round shading by switching to vertex normals
+;; DONE: need to implement round shading by switching to vertex normals
+;; TODO: have a way of describing in the curve which curve points are smooth and which are flat
+;; TODO: define =curve= and (points =curve=) so we can have bezier curves and all that stuff, too
 
-;;DONE: think about putting faces into separate data-type, letting meshed take care of extracting information
-;; DOING: put the new datatype in here
+;;DOING: compilable objects
+
+;;TODO: surface objects
+
 
 (in-package #:uid)
 
@@ -35,26 +39,28 @@
 		      (apply #'gl:vertex (coerce (point v) 'list)))
 		 ))))
 
-;;TODO: WTF!!!!!!!!!!!!!!!!!!!!!
-(defreply vertex-normal-in ((vertex =vertex=) (m =meshed=))
-	  (let ((concerned-faces ()))
-	    ;;look at all faces that contain the vertex
-	    (loop for f in (faces m) do
-		 (print f)
-		 (when (member vertex (vertices f))
-		   ;;check if we have any edge that contains the vertex and is smooth
-		   (print vertex)
-		   (print (edges f))
-		   (loop for e in (edges f) do
-			(when (and (used-by vertex e)
-				   (smoothp e))
-			  (print 'yay)
-			  (pushnew f concerned-faces)))))
-	    ;;now interpolate the face-normals
-	    (assert (> (length concerned-faces) 0))
-	    (print concerned-faces)
-	    (normalize! (apply #'map 'vector #'+ (mapcar #'normal concerned-faces)))
-	    ))
+;;TODO: WTF!!!!!!!!!!!!!!!!!!!!! (some random bug that killed my whole image)
+;;DOING: making that a reply on face and return a list of all the normal
+(defreply vertex-normal-in ((face =face=) (m =meshed=))
+  (let ((concerned-faces (list face)) ;this one is always included in the calculation
+	(vertices (vertices face))) 
+    ;;look at all faces that contain the vertex
+    (loop for f in (faces m) do
+	 (print f)
+	 (when (member vertex (vertices f))
+	   ;;check if we have any edge that contains the vertex and is smooth
+	   (print vertex)
+	   (print (edges f))
+	   (loop for e in (edges f) do
+		(when (and (used-by vertex e)
+			   (smoothp e))
+		  (print 'yay)
+		  (pushnew f concerned-faces)))))
+    ;;now interpolate the face-normals
+    (assert (> (length concerned-faces) 0))
+    (print concerned-faces)
+    (normalize! (apply #'map 'vector #'+ (mapcar #'normal concerned-faces)))
+    ))
 
 ;;DONE: need to normalize normals :)
 (defun 3p-normal (p1 p2 p3 &optional pin)

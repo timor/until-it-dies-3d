@@ -15,4 +15,5 @@
 		       (:file "3d")
 		       (:file "camera")
 		       (:file "topology")
-		       (:file "solid")))))))
+		       (:file "solid")
+		       (:file "compile"))))))
