@@ -8,6 +8,7 @@
 ;; * and because all that must happen inside a gl context the list adding and deleting functions will be hooks in the main loop of the engine, which means that these must be some kind of gl-containers
 
 
+;;DONE: make sure display list does _not_ contain transformation. -> added :no-transform to 3dobject
 ;;TODO: try display list overriding
 ;;TODO: hook into the add-content and remove-content messages
 
@@ -28,10 +29,10 @@
 
 (defreply compile-display ((c =compilable=))
 	  (if (null (display-list-id c))
-	      (error "trying to compile object without valid display list")
+	      (error "trying to compile object without valid display list, did you just push something into a content list without using add-content?")
 	      (progn
 		(gl:with-new-list ((display-list-id c) :compile)
-		  (draw c :directly t))
+		  (draw c :directly t :no-transform t))
 		(setf (need-recompile c) nil))))
 
 ;;directly: dont check for recompile, would get recursive
@@ -41,7 +42,7 @@
 	      (progn
 		(when (need-recompile o)
 		  (compile-display o))
-		(call-next-reply))))
+		(%gl:call-list (display-list-id o)))))
 
 ;;now this is something new: modify the engine object here with previuosly undefined properties, as well as hook ourself into the =3dobject= hierarchy
 ;;wether this is good style is a different question, but since nothing here will be used anywhere else, the result should be consistent
@@ -49,12 +50,13 @@
 
 ;;another way to hook this in would be in the init function. implications unknown
 
+;;actually all of it was a bad idea and gets cleaned up 
 ;;TODO: put the right kind of eval-when here
 ;; i hate eval-when. its more like evil-when
 ;;NOTE: perhaps the member test should be replaced by an ancestor test
-(let ((opars (copy-list (object-parents =3dobject=))))
-  (unless (member =compilable= opars)
-    (setf (object-parents =3dobject=) (pushnew =compilable= opars))))
+;;(let ((opars (copy-list (object-parents =3dobject=))))
+;;  (unless (member =compilable= opars)
+;;    (setf (object-parents =3dobject=) (pushnew =compilable= opars))))
 
 
 ;;when adding to a container the first time, allocate a display list
@@ -70,6 +72,7 @@
 ;;when removing from container, maybe release the display list
 (defreply remove-content :after ((container =container=) (object =compilable=) &key)
 	  (with-properties (locks) object
+	    (setf locks (remove container locks))
 	    (if (null (locks object))
 		(let ((id (display-list-id object)))
 		  (when id
@@ -77,4 +80,4 @@
 			    (%gl:delete-lists id 1))
 			  (hooks container))
 		    (setf (display-list-id object) nil)))
-		(setf locks (remove container locks)))))
+		)))

@@ -27,6 +27,8 @@
    2d-content
    3d-content))
 
+;;TODO this is lika bad forward declaration, need to fix deps
+;;(defvar =3dview= ())
 (defreply shared-init :after ((3ds =3dsheep=) &key)
 	  (setf (current-3dview 3ds) (create =3dview=))
 	  (with-properties (width height aspect) (current-3dview 3ds)
@@ -53,52 +55,16 @@
 	  (dolist (li l)
 	    (draw li)))
 
-(defreply remove-content ((e =3dsheep=) (o =3dobject=) &key)
-	  "remove content from 2d and 3d view of engine"
-	  (setf (2d-content e) (remove o (2d-content e)))
-	  (setf (3d-content e) (remove o (3d-content e))))
-
-;;;basic 3d objects===================
-
-;;generic 3d objects that have a position in space
-(defproto =3dobject= ()
-  ((x 0)
-   (y 0)
-   (z 0)))
-
-(defreply add-content ((e =3dsheep=) (o =3dobject=) &key (view :3d))
+(defreply add-content ((e =3dsheep=) o &key (view :3d))
 	  "this is the preferred way of adding things to an engine, view can be :2d or :3d"
 	  (ecase view
 	    (:2d (pushnew o (2d-content e)))
 	    (:3d (pushnew o (3d-content e)))))
 
-(defreply move-to ((o =3dobject=) pos)
-  (with-properties (x y z) o
-    (setf x (elt pos 0)
-	  y (elt pos 1)
-	  z (elt pos 2))))
-
-;;do the cool transformation stuff here
-(defreply draw :around ((o =3dobject=) &key)
-	  (with-properties (x y z) o
-	    (gl:with-pushed-matrix 
-	      (gl:translate  x  y  z)
-	      (call-next-reply))))
-
-;;shaded objects: this should get merged into normal objects, since it is really basic, but its a good exercise for mixins right now
-;;actually: none of this is probably needed since smooth shading is enabled by default, and flat shading is just a special case
-(defproto =shaded= ()
-  ((smooth t)))
-
-;;DONE: debug why this doesnt get called right... => need correct vertex normals
-;;DONE: recalculate vertex normals correctly
-(defreply draw :around ((o =shaded=) &key)
-	  (gl:with-pushed-attrib (:lighting-bit)
-	    (%gl:shade-model (if (smooth o)
-				 :smooth
-				 :flat))
-	    (call-next-reply)))
-
+(defreply remove-content ((e =3dsheep=) (o =3dobject=) &key)
+	  "remove content from 2d and 3d view of engine"
+	  (setf (2d-content e) (remove o (2d-content e)))
+	  (setf (3d-content e) (remove o (3d-content e))))
 
 ;now lets get our repl back!========================
 	  

@@ -27,10 +27,9 @@
 	      (draw-line p0 pz :color *green*))))
 
 
-;;(pushnew *axes* (3d-content te))
-(add-content te *axes*)
-;;(defreply draw :before ((e te) &key)
-;;	  (draw *axes*))
+;;(add-content te *axes*)
+(defreply draw :before ((e te) &key)
+	  (draw *axes*))
 
 (defparameter c1 (list
 	    #(1 0)
@@ -44,7 +43,7 @@
 		   'curve c1
 		   'numsegs 5))
 (turn r1)
-(pushnew r1 (3d-content te))
+(add-content te r1)
 
 (setf (numsegs r1) 20)
 
@@ -101,4 +100,4 @@
 			 :neighbors (list f1 f3)))
 
 (loop for f in (list f1 f2 f3) do
-     (pushnew f (3d-content te)))
+     (add-content te f))

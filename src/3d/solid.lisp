@@ -14,10 +14,11 @@
 
 (in-package #:uid)
 
-(defproto =meshed= (=3dobject=)
-  (;;vertices ;;make-point thingies!!!
+(defproto =meshed= (=3dobject= =compilable=) 
+  (
    faces
-   vertex-normals))
+  ; vertex-normals
+))
 
 ;;returns a list of all edges contained in the =meshed=, in unspecified order
 (defreply edges ((m =meshed=))
@@ -27,40 +28,45 @@
 		  do (pushnew e unique-edges))
 	       finally (return unique-edges)))
 
-;;DOING: change the face-normals into vertex normals once done
+;;DONE: change the face-normals into vertex normals once done
 (defreply draw ((m =meshed=) &key)
 	  (with-properties (faces) m
-	    (loop for f in faces 
-	       ;;for normal across normals
-	       do 
+	    (loop 
+	       for f in faces do 
 	       (gl:with-primitive :polygon
-		 (loop for v in (vertices f) do
-		      (apply #'gl:normal (coerce (vertex-normal-in v m) 'list))
-		      (apply #'gl:vertex (coerce (point v) 'list)))
+		 (loop
+		    for v in (vertices f) 
+		    for ns in (vertex-normals-in f m) do
+		    (apply #'gl:normal (coerce ns 'list))
+		    (apply #'gl:vertex (coerce (point v) 'list)))
 		 ))))
 
 ;;TODO: WTF!!!!!!!!!!!!!!!!!!!!! (some random bug that killed my whole image)
-;;DOING: making that a reply on face and return a list of all the normal
-(defreply vertex-normal-in ((face =face=) (m =meshed=))
-  (let ((concerned-faces (list face)) ;this one is always included in the calculation
-	(vertices (vertices face))) 
-    ;;look at all faces that contain the vertex
-    (loop for f in (faces m) do
-	 (print f)
-	 (when (member vertex (vertices f))
-	   ;;check if we have any edge that contains the vertex and is smooth
-	   (print vertex)
-	   (print (edges f))
-	   (loop for e in (edges f) do
-		(when (and (used-by vertex e)
-			   (smoothp e))
-		  (print 'yay)
-		  (pushnew f concerned-faces)))))
-    ;;now interpolate the face-normals
-    (assert (> (length concerned-faces) 0))
-    (print concerned-faces)
-    (normalize! (apply #'map 'vector #'+ (mapcar #'normal concerned-faces)))
-    ))
+;;DOING: making that a reply on face and return a list of all the normals
+;;TODO: use half-edgeity to only check concerning faces
+(defreply vertex-normals-in ((face =face=) (m =meshed=))
+	  (let ((concerned-faces (list face)) ;this one is always included in the calculation
+		(vertices (vertices face))) 
+	    ;;look at all faces that contain the vertex
+	    (loop for vertex in vertices 
+	       do (setf concerned-faces (list face))
+	       collect
+	       (loop for f in (faces m) do
+		    (print f)
+		    (when (member vertex (vertices f))
+		      ;;check if we have any edge that contains the vertex and is smooth
+		      ;;(print vertex)
+		      (print (edges f))
+		      (loop for e in (edges f) do
+			   (when (and (used-by vertex e)
+				      (smoothp e))
+			     (print 'yay)
+			     (pushnew f concerned-faces))))
+		    finally 
+		  ;;now interpolate the face-normals
+		    (assert (> (length concerned-faces) 0))
+		  ;;(print concerned-faces)
+		    (return (normalize! (apply #'map 'vector #'+ (mapcar #'normal concerned-faces))))))))
 
 ;;DONE: need to normalize normals :)
 (defun 3p-normal (p1 p2 p3 &optional pin)
@@ -129,15 +135,15 @@
 			   for ovz = (svref ov 1)
 			   for i from 0 by 1
 			   collect
-			     (let ((new-vertex
-				    (create =vertex=
-					    :point (vector (* (cos angle) ovx)
-							   (* (sin angle) ovx)
-							   ovz))))
-			       (setf (property-value new-vertex 'rotary-angle) angle
-				     (property-value new-vertex 'rotary-original-point) ov
-				     (property-value new-vertex 'rotary-point-number) (+ vnum i))
-			       new-vertex)) into verts
+			   (let ((new-vertex
+				  (create =vertex=
+					  :point (vector (* (cos angle) ovx)
+							 (* (sin angle) ovx)
+							 ovz))))
+			     (setf (property-value new-vertex 'rotary-angle) angle
+				   (property-value new-vertex 'rotary-original-point) ov
+				   (property-value new-vertex 'rotary-point-number) (+ vnum i))
+			     new-vertex)) into verts
 		 finally (setf vertices verts))
 	      ;;second run: build up the faces
 	      (setf vertices (append vertices (list zenith nadir)))
@@ -147,38 +153,40 @@
 		 for angle from 0 below (* 2 pi) by (/ (* 2 pi) numsegs)
 		 ;;collect faces (topology stuff)
 		 do (loop
-			   for i from 0 to clength
-			   for j from (1-  vnum) by 1
-			   do
-			     (let ((new-face
-				    (cond ((= i 0)
-					   (create =face= :vertices
-						   (list
-						    zenith
-						    (nth (1+  j) vertices)
-						    (nth (mod (+ 1 j clength) numverts) vertices))
-						   :neighbors fs
-						   ))
-					  ((= i clength)
-					   (create =face= :vertices 
-						   (list
-						    nadir
-						    (nth (mod (+ j clength) numverts) vertices)
-						    (nth j vertices))
-						   :neighbors fs
-						   ))
-					  (t
-					   (create =face= :vertices
-						   (mapcar (fun (nth _ vertices))
-							   (list
-							    j
-							    (+ j 1)
-							    (mod (+ j clength 1) numverts)
-							    (mod (+ j clength) numverts)))
-						   :neighbors fs
-						   )))))
-			       (setf (property-value new-face 'rotary-curve-segment) clength)
-			       (push new-face fs)))
+		       for i from 0 to clength
+		       for j from (1-  vnum) by 1
+		       do
+		       (let ((new-face
+			      (cond ((= i 0)
+				     (create =face= :vertices
+					     (list
+					      (nth (1+  j) vertices)
+					      zenith
+					      (nth (mod (+ 1 j clength) numverts) vertices))
+					     :neighbors fs
+					     ))
+				    ((= i clength)
+				     (create =face= :vertices 
+					     (list
+					      (nth (mod (+ j clength) numverts) vertices)
+					      nadir
+					      (nth j vertices))
+					     :neighbors fs
+					     ))
+				    (t
+				     (create =face= :vertices
+					     (mapcar (fun (nth _ vertices))
+						     (reverse (list
+							       j
+							       (+ j 1)
+							       (mod (+ j clength 1) numverts)
+							       (mod (+ j clength) numverts)
+							       )))
+					     :neighbors fs
+					     )))))
+			 (setf (property-value new-face 'rotary-curve-segment) clength)
+			 (loop for e in (edges new-face) do (setf (smoothp e) t))
+			 (push new-face fs)))
 		 finally (setf faces fs))
 	      (setf (faces r) faces)))
 	  r)
