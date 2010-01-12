@@ -1,8 +1,12 @@
 ;;; -*- Mode:Lisp; Syntax:ANSI-Common-Lisp; Coding:utf-8 -*-
 
-;;DOING: containers
-
 (in-package #:uid)
+
+
+;;DONE: containers: may contain other objects, and decide to modify their replies
+;;       more importantly, every object registers its hooks with its container,
+;;TOOD:  which in turn must register them in his, asf.
+
 
 ;;containers are for storing other objects, they must keep track of hooks, which may be stored there
 ;;hooks are one-time closures, anything else is an update, not a hook
@@ -27,8 +31,6 @@
    2d-content
    3d-content))
 
-;;TODO this is lika bad forward declaration, need to fix deps
-;;(defvar =3dview= ())
 (defreply shared-init :after ((3ds =3dsheep=) &key)
 	  (setf (current-3dview 3ds) (create =3dview=))
 	  (with-properties (width height aspect) (current-3dview 3ds)

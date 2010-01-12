@@ -1,5 +1,6 @@
 ;;; -*- Mode:Lisp; Syntax:ANSI-Common-Lisp; Coding:utf-8 -*-
 ;;DONE: add vertex and face objects
+;;DOING: neighbor messages
 
 
 ;;important: right now edge-uses that are partners must point to the same edge
@@ -10,6 +11,7 @@
 (defun printv (thing)
   (print-sheeple-object-verbose thing *standard-output*))
 
+;;=============================Vertices============================
 (defproto =vertex= ()
   (point ;;these should be a vector, and a 3d one too
    color      ;;by default unset, can be an opengl color
@@ -19,6 +21,8 @@
 	  (print-unreadable-object (v stream :identity t)
 	    (format stream "Vertex @ ~a" (point v))))
 
+
+;;=============================Edges==============================
 ;;edges are flat by default
 (defproto =edge= ()
   ;;vertices
@@ -35,12 +39,14 @@
 		    (start e)
 		    (end e))))
 
+;;===========================Edge-Uses==============================
+
 ;;big brother has some good ideas:
 (defproto =edge-use= ()
   (edge
-   partner	  ;other edgeuses when connection to other face exists
-   reversedp
-   face ;;the face that we belong to
+   partner   ;other edgeuses when connection to other face exists
+   reversedp ;wether the edge is used in the reverse direction for face
+   face	     ;the face that we belong to, can this freak out the gc?
    ))
 
 (defreply smoothp ((eu =edge-use=))
@@ -52,6 +58,8 @@
 			 (edge eu)))
 	    (error "when assigned a partner, an edge-use must have the same edge as its partner")))
 
+
+;;=====================================Faces======================================
 (defproto =face= ()
   (edge-uses ;;list of edge-uses comprising the loop
    ;;not a property, but a reply: normal
@@ -64,7 +72,6 @@
 		    (ignore-errors (point (first (vertices f))))
 		    (ignore-errors (mapcar 'point (rest (vertices f)))))))
 
-;;TODO: maybe-reversed
 (defreply normal ((f =face=))
 	  (apply #'3p-normal (mapcar #'point (subseq (vertices f) 0 3))))
 
@@ -127,39 +134,16 @@
 			     (create =vertex= :point p2))))
 		(call-next-reply proto 'start start 'end end))))
 
-;;im stupid so i have to write this helper
-;;and because im even more stupid i dont actually use it...
-;;returns either t or nil, meant for relative comparisons
-;;loop is just a list
-(defun order-in-loop (e1 e2 loop)
-  (flet ((positivep (i)
-	   (>= i 0)))		 ;lets really get in a fight over this
-    (let ((head (car loop)))
-      (when (and (eql e2 head)
-		 (eql e1 (car (last loop))))
-	(setf loop (append (rest loop) (list head)))
-	(print 'around))
-      ;;now for the positions
-      (positivep (- (position e2 loop)
-		    (position e1 loop))))))
-
-;;TODO: maybe extend to same positions
+;;TODO: extend to same positions instead of only vertices
 ;;works if the same vertices are used, if more than two faces are already connected
 ;;edges of oldface are not touched, while edge of newface will be released if connection is found
 ;;DONE: need to set reversedp on new edge-use correctly
-;; TODO/DOING: write find-neighbors-among-faces to ease debugging the rotary
 (defreply attach ((newface =face=) (oldface =face=))
 	  ;;first find two vertices which both have in common
 	  (let ((common-vertices (loop for v1 in (vertices newface)
 				    when (member v1 (vertices oldface))
 				    collect v1)))
 	    (when (= 2 (length common-vertices)) ;;only continue if this is simple (should be the case fo most convex faces)
-	      (print "found common vertices for newface:")
-	      (print newface)
-	      (print "oldface:")
-	      (print oldface)
-	      (print "have common:")
-	      (print common-vertices)
 	      (let* ((v1 (first common-vertices))
 		     (v2 (second common-vertices))
 		     ;;get the corresponding edge-uses on both sides
@@ -211,7 +195,16 @@
 
 ;;make ourselves known to our edge-uses, although thats probably not good,
 ;;because it messes up the hierarchy and may disturb the gc, too
-
 (defreply shared-init :after ((face =face=) &key)
 	  (loop for eu in (edge-uses face)
 	     do (setf (face eu) face)))
+
+(defreply neighbors ((f =face=))
+  "return all the faces that share edges, in order"
+  (loop for eu in (edge-uses f)
+       when (partner eu)
+       collect (face (partner eu))))
+
+
+;;DOING: corner neighbours
+(defreply n ())

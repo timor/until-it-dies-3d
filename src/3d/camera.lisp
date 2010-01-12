@@ -56,20 +56,20 @@
 	    (gl:load-identity)))
 
 
-;;TODO: check delegation of vectors so they are overriden when changed...
+
 ;;want the object functionality here, as well as the move-to
 (defproto =camera= (=3dview= =3dobject=)
   ((phi 1)
    (theta 1)
    (rho 1)))
 
-;;some craziness, lets see if that works
+;;some craziness, lets see if that works, yup, it does
 (defun change-view-to-camera (view)
   (unless (descendantp view =camera=)
     (setf (object-parents view)
 	  (list =camera=))))
 
-;;special thingy to harmonize the two definitions
+;;special thingy to SYNERGIZE the two definitions
 (defreply move-to :after ((cam =camera=) new-pos)
 	  (declare (ignorable new-pos))
 	  (setf (eye cam) (vector 
