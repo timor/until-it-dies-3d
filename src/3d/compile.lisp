@@ -27,6 +27,9 @@
    locks ;;this gets updated when added as content to something
    ))
 
+(defreply schedule-recompile ((c =compilable=))
+	  (setf (need-recompile c) t))
+
 (defreply compile-display ((c =compilable=))
 	  (if (null (display-list-id c))
 	      (error "trying to compile object without valid display list, did you just push something into a content list without using add-content?")

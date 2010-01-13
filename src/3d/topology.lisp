@@ -58,6 +58,16 @@
 			 (edge eu)))
 	    (error "when assigned a partner, an edge-use must have the same edge as its partner")))
 
+(defreply start ((eu =edge-use=))
+  (if (reversedp eu)
+      (end (edge eu))
+      (start (edge eu))))
+
+(defreply end ((eu =edge-use=))
+  (if (reversedp eu)
+      (start (edge eu))
+      (end (edge eu))))
+
 
 ;;=====================================Faces======================================
 (defproto =face= ()
@@ -96,6 +106,10 @@
 			       (reverse (vertices (edge eu)))
 			       (vertices (edge eu))))))
 
+;;edge use iteration
+(defreply next-in-face ((eu =edge-use=))
+	  (with-properties (face) eu
+	    (find (end eu) (edge-uses face) :key 'start)))
 ;;some construction helpers:
 
 (defmessage used-by (usee user))
@@ -116,7 +130,6 @@
 (defreply used-by ((edge =edge=) (face =face=))
 	  (member edge (edge-uses face) :key #'edge))
 
-;;DONE: below replies should probably all be simple defuns, no?... :( ... NO!
 
 ;;KISS vertex construction
 (defreply create ((proto =vertex=) &key point)
@@ -165,7 +178,7 @@
 		(setf (partner new-eu) old-eu)))))
 
 ;;face construction, methods can be :edges :edge-uses :points or :vertices
-;;DONE: incorporate :neighbors
+;;TODO: throw :neighbors out, clever attaching should be used instead
 (defreply create ((proto =face=) &key edge-uses edges points vertices neighbors)
 	  (if (not (= 1 (count t (mapcar (fun (not (null _)))
 					 (list edge-uses edges points vertices)))))
@@ -187,14 +200,17 @@
 			   (points
 			    (create proto :vertices (mapcar (fun (create =vertex= :point _))
 							    points))))))
-		(loop for n in neighbors do
-		     (attach fresh-face n))
+		(loop for n in neighbors
+		     do (attach fresh-face n))
 		fresh-face)))
 
+(defreply center ((f =face=))
+	  (apply #'3p-average (mapcar 'point (vertices f))))
 
 
 ;;make ourselves known to our edge-uses, although thats probably not good,
 ;;because it messes up the hierarchy and may disturb the gc, too
+;;wouldnt be a linked half-edge list otherwise, though
 (defreply shared-init :after ((face =face=) &key)
 	  (loop for eu in (edge-uses face)
 	     do (setf (face eu) face)))
@@ -206,5 +222,12 @@
        collect (face (partner eu))))
 
 
-;;DOING: corner neighbours
-(defreply n ())
+;;DONE: corner neighbours, only works on solids for now, invalid on "edges" of a constellation
+(defreply neighbors-at-vertex ((f =face=) (v =vertex=))
+  (if (not (used-by v f))
+      (error "trying to get neighbors at a vertex that is not part of the face")
+      (loop with start-eu = (find v (edge-uses f) :key 'end)
+	   for next-eu = (partner (next-in-face start-eu)) then (partner (next-in-face next-eu))
+	   collect (face next-eu)
+	   until (or (null next-eu)
+		     (eq next-eu start-eu)))))

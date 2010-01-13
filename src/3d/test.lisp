@@ -42,13 +42,27 @@
 (defparameter r1 (create =rotary=
 		   'curve c1
 		   'numsegs 5))
+(setf (numsegs r1) 5)
 (turn r1)
 (add-content te r1)
 
 (setf (numsegs r1) 20)
 
 (turn r1)
+(schedule-recompile r1)
 (move-to r1 #(5 5 0))
+;;show me the normals:
+(defreply draw :after ((r r1) &key)
+	  (gl:with-pushed-attrib (:lighting-bit)
+	    (gl:disable :lighting)
+	    (loop for f in (faces r) do
+		 (draw-line (center f) (vector+ (center f) (normal f)) :color *magenta*)
+		 (loop for v in (vertices f)
+		    for n in (vertex-normals-in f r) do	    
+		    (let* ((p1 (point v))
+			   (p2 (vector+ p1 n)))
+		      (draw-line p1 p2 :color *orange*))))))
+(schedule-recompile r1)
 
 ;;now create a camera
 (defparameter tv (current-3dview te))

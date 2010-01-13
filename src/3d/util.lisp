@@ -73,6 +73,9 @@
 	 (setf (svref vec i) (/ e length)))
     vec))
 
+(defun 3p-average (&rest points)
+  (map 'vector (fun (/ _ (length points))) (apply #'vector+ points)))
+
 (defun deg2rad (x)
   (* pi (/ x 180.0)))
 

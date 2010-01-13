@@ -15,10 +15,7 @@
 (in-package #:uid)
 
 (defproto =meshed= (=3dobject= =compilable=) 
-  (
-   faces
-  ; vertex-normals
-))
+  (faces))
 
 ;;returns a list of all edges contained in the =meshed=, in unspecified order
 (defreply edges ((m =meshed=))
@@ -45,28 +42,13 @@
 ;;DOING: making that a reply on face and return a list of all the normals
 ;;TODO: use half-edgeity to only check concerning faces
 (defreply vertex-normals-in ((face =face=) (m =meshed=))
-	  (let ((concerned-faces (list face)) ;this one is always included in the calculation
+	  (let (normal-faces ;this one is always included in the calculation
 		(vertices (vertices face))) 
 	    ;;look at all faces that contain the vertex
 	    (loop for vertex in vertices 
-	       do (setf concerned-faces (list face))
+	       do (setf normal-faces (list face))
 	       collect
-	       (loop for f in (faces m) do
-		    (print f)
-		    (when (member vertex (vertices f))
-		      ;;check if we have any edge that contains the vertex and is smooth
-		      ;;(print vertex)
-		      (print (edges f))
-		      (loop for e in (edges f) do
-			   (when (and (used-by vertex e)
-				      (smoothp e))
-			     (print 'yay)
-			     (pushnew f concerned-faces))))
-		    finally 
-		  ;;now interpolate the face-normals
-		    (assert (> (length concerned-faces) 0))
-		  ;;(print concerned-faces)
-		    (return (normalize! (apply #'map 'vector #'+ (mapcar #'normal concerned-faces))))))))
+		 (normalize! (apply #'vector+ (mapcar #'normal (neighbors-at-vertex face vertex)))))))
 
 ;;DONE: need to normalize normals :)
 (defun 3p-normal (p1 p2 p3 &optional pin)
@@ -86,7 +68,7 @@
 	    (positions item sequence :from-end from-end :start (+ 1 found) :end end :key key :test test :test-not test-not)))))
 
 ;;DONE: fix index loop here
-;;TODO: remove that implementation and build some auto-smoothing function
+;;TODO: rewrite into auto-smooth
 (defreply auto-normals ((m =meshed=))
 	  (with-properties (vertices faces face-normals vertex-normals edgeloop-normals) m
 	    (loop for ivec across faces
@@ -111,8 +93,9 @@
 ;;DONE: change face orientation by flipping vertex order 
 ;;DONE: check orientation of faces practically, harmonize with normals
 ;;DONE: find out how 2d clipping affects 3d projection -> depth test was messing up
-;;DOING: use new data structures, create a face and then attach another one
-;; DOING: find out why neighboring does not work right >:(
+;;DONE: use new data structures, create a face and then attach another one
+;; DONE: find out why neighboring does not work right >:(
+;;TODO: curves should already contain the information wether their corners are smooth, this should be put into vertex-normals(=predefined-vertex-normals= mixin, perhaps) and used in drawing for speed gains
 (defreply turn ((r =rotary=))
 	  (with-properties (numsegs curve) r
 	    (assert (>= numsegs 4)) ;;TODO find the bug with 3 segs
@@ -189,4 +172,5 @@
 			 (push new-face fs)))
 		 finally (setf faces fs))
 	      (setf (faces r) faces)))
+	  ;;(setf (need-recompile r) t)
 	  r)
