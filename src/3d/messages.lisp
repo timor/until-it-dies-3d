@@ -1,17 +1,37 @@
 (in-package #:uid)
 
 
+;;========3dobject=============
 ;;nice lil' shortcut for interactive stuff placement
 (defmessage move-to (object new-position)
   (:documentation  "move object to new position"))
 
-(defmessage compile-display (object)
+
+(defmessage add-content (container content-thingy &key))
+
+(defmessage remove-content (container content-thingy &key))
+
+;;===========util/debug========
+(defreply print-sheeple-object-verbose (object stream))
+
+;;=======compilable============
+(defmessage compile-display (compilable-object)
   (:documentation "compile an object so that it can be drawn faster"))
 
-;;used and implemented in compile.lisp
-(defmessage request-display-list (engine)
-  (:documentation "get a display list from an engine"))
+(defmessage schedule-recompile (compilable-object)
+  (:documentation "make sure compilable-object is recompiled before next draw cycle"))
 
-(defmessage add-content (container thingy &key))
+;;========rotary================
+(defmessage turn (rotary))
 
-(defmessage remove-content (container thingy &key))
+
+;;========topology=============
+(defmessage used-by (usee user))
+
+(defmessage normal (plany-thingy))
+
+(defmessage next-in-face (face-boundary-thingy))
+
+(defmessage attach (what where))
+
+(defmessage neigbors (topological-thingy))

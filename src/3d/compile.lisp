@@ -7,13 +7,13 @@
 ;; * when that happens, the display list is freed
 ;; * and because all that must happen inside a gl context the list adding and deleting functions will be hooks in the main loop of the engine, which means that these must be some kind of gl-containers
 
+;;IMPORTANT: since draw wrapping for compilation is handled in an :around, care must be taken where to put specialized draw code. safest places are the :before and :after replies
 
-;;DONE: make sure display list does _not_ contain transformation. -> added :no-transform to 3dobject
-;;TODO: try display list overriding
-;;TODO: hook into the add-content and remove-content messages
+
+;;DONE: make sure display list does _not_ contain transformation. -> added :no-transform to draw of 3dobject
+;;DONE: hook into the add-content and remove-content messages
 
 ;;DOING: compilable objects
-;; DOING: display-list struct with finalizer
 ;; DONE: think where the available list indices should be stored and managed, probably in the engine... not needed, since genlists gives us a valid index and we dont have to track our own
 (in-package #:uid)
 
@@ -52,7 +52,6 @@
 		  (compile-display o))
 		(%gl:call-list (display-list-id o)))))
 
-
 ;;when adding to a container the first time, allocate a display list
 (defreply add-content :before ((container =container=) (object =compilable=) &key)
 	  (when (null (locks object))
@@ -73,5 +72,4 @@
 		    (push (lambda ()
 			    (%gl:delete-lists id 1))
 			  (hooks container))
-		    (setf (display-list-id object) nil)))
-		)))
+		    (setf (display-list-id object) nil))))))

@@ -8,6 +8,20 @@
 
 (defparameter *tolerance* 1e-5)
 
+;;make-point with floats, needed for glu. not nice, has to go away
+(deftype 3dp ()
+  '(vector double-float 3))
+
+(defun 3dp (x y &optional (z 0))
+  (vector (float x) (float y) (float z)))
+
+(defun 3dp-x (p)
+  (aref p 0))
+(defun 3dp-y (p)
+  (aref p 1))
+(defun 3dp-z (p)
+  (aref p 2))
+
 (defun maptree(fn &rest args)
   "recursive mapcar for trees"
   (if (some #'atom args)
@@ -107,3 +121,7 @@
 ;;;;ordered number set:
 ;;(defun find-gap-in-ons (ons)
 ;;  "returns the first number that is in a gap")
+
+(defun printv (thing)
+  (print-sheeple-object-verbose thing *standard-output*))
+

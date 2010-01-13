@@ -2,20 +2,6 @@
 
 (in-package #:uid)
 
-;;make-point with floats, needed for glu. not nice, has to go away
-(deftype 3dp ()
-  '(vector double-float 3))
-
-(defun 3dp (x y &optional (z 0))
-  (vector (float x) (float y) (float z)))
-
-(defun 3dp-x (p)
-  (aref p 0))
-(defun 3dp-y (p)
-  (aref p 1))
-(defun 3dp-z (p)
-  (aref p 2))
-
 ;;;first, get us a 3d view
 (defproto =3dview= () 
   ((eye (3dp 10 20 15))

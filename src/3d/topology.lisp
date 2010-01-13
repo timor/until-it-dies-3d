@@ -7,10 +7,6 @@
 
 (in-package #:uid)
 
-;;TOOD: move somewhere else
-(defun printv (thing)
-  (print-sheeple-object-verbose thing *standard-output*))
-
 ;;=============================Vertices============================
 (defproto =vertex= ()
   (point ;;these should be a vector, and a 3d one too
@@ -112,7 +108,6 @@
 	    (find (end eu) (edge-uses face) :key 'start)))
 ;;some construction helpers:
 
-(defmessage used-by (usee user))
 
 (defreply used-by ((vertex =vertex=) (edge =edge=))
 	  (or (eq vertex (start edge))

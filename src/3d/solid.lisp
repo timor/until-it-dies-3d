@@ -1,13 +1,14 @@
 ;;; -*- Mode:Lisp; Syntax:ANSI-Common-Lisp; Coding:utf-8 -*-
 
 ;;simple solid body creation, lotsa stuff can be made outa that
-;;TODO: finish rotary
-;; DONE: basic lathing functionality
-;; DONE: need to implement round shading by switching to vertex normals
+;;TODO: improve rotary
+;; give it a different name?
 ;; TODO: have a way of describing in the curve which curve points are smooth and which are flat
 ;; TODO: define =curve= and (points =curve=) so we can have bezier curves and all that stuff, too
 
-;;DOING: compilable objects
+
+;;DONE: compilable objects
+
 
 ;;TODO: surface objects
 
@@ -38,9 +39,8 @@
 		    (apply #'gl:vertex (coerce (point v) 'list)))
 		 ))))
 
-;;TODO: WTF!!!!!!!!!!!!!!!!!!!!! (some random bug that killed my whole image)
-;;DOING: making that a reply on face and return a list of all the normals
-;;TODO: use half-edgeity to only check concerning faces
+;;DONE: making that a reply on face and return a list of all the normals
+;;DONE: use half-edgeity to only check concerning faces
 (defreply vertex-normals-in ((face =face=) (m =meshed=))
 	  (let (normal-faces ;this one is always included in the calculation
 		(vertices (vertices face))) 
@@ -85,16 +85,11 @@
 	       finally (setf vertex-normals (coerce vnorms 'simple-vector)))))
 
 
-;;bring out the lathe===============================================
+;;======================bring out the lathe===============================================
 (defproto =rotary= (=meshed=)
   ((curve) ;;2d vertices in x-z plane
    (numsegs 5)))
 
-;;DONE: change face orientation by flipping vertex order 
-;;DONE: check orientation of faces practically, harmonize with normals
-;;DONE: find out how 2d clipping affects 3d projection -> depth test was messing up
-;;DONE: use new data structures, create a face and then attach another one
-;; DONE: find out why neighboring does not work right >:(
 ;;TODO: curves should already contain the information wether their corners are smooth, this should be put into vertex-normals(=predefined-vertex-normals= mixin, perhaps) and used in drawing for speed gains
 (defreply turn ((r =rotary=))
 	  (with-properties (numsegs curve) r
