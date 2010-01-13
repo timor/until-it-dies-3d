@@ -1,4 +1,7 @@
-;;some test code, gets loader after everything, by default
+;;some test code
+;;it safest to execute every command in order by hand
+;;when the engine thread signals an error, it is usually safe to continue,
+;;any display errors should be fixed with the last command down there 
 
 
 ;;TODO: this has to be external!!!!
@@ -30,6 +33,8 @@
 ;;(add-content te *axes*)
 (defreply draw :before ((e te) &key)
 	  (draw *axes*))
+
+;;dont see anything because the 3d-content of te is empty
 
 (defparameter c1 (list
 	    #(1 0)
@@ -115,3 +120,6 @@
 
 (loop for f in (list f1 f2 f3) do
      (add-content te f))
+
+;;and in the (very likely) case that some (contiuable) error messed up the display, this should fix things:
+(recompile-all te)

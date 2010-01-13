@@ -30,6 +30,11 @@
 (defreply schedule-recompile ((c =compilable=))
 	  (setf (need-recompile c) t))
 
+(defreply recompile-all ((e =3dsheep=))
+	  (dolist (c (3d-content e))
+	    (when (ancestorp =compilable= c)
+	      (schedule-recompile c))))
+
 (defreply compile-display ((c =compilable=))
 	  (if (null (display-list-id c))
 	      (error "trying to compile object without valid display list, did you just push something into a content list without using add-content?")
@@ -46,20 +51,6 @@
 		(when (need-recompile o)
 		  (compile-display o))
 		(%gl:call-list (display-list-id o)))))
-
-;;now this is something new: modify the engine object here with previuosly undefined properties, as well as hook ourself into the =3dobject= hierarchy
-;;wether this is good style is a different question, but since nothing here will be used anywhere else, the result should be consistent
-;;only drawback is that the definition is split in multiple places :<
-
-;;another way to hook this in would be in the init function. implications unknown
-
-;;actually all of it was a bad idea and gets cleaned up 
-;;TODO: put the right kind of eval-when here
-;; i hate eval-when. its more like evil-when
-;;NOTE: perhaps the member test should be replaced by an ancestor test
-;;(let ((opars (copy-list (object-parents =3dobject=))))
-;;  (unless (member =compilable= opars)
-;;    (setf (object-parents =3dobject=) (pushnew =compilable= opars))))
 
 
 ;;when adding to a container the first time, allocate a display list
