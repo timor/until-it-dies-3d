@@ -87,10 +87,36 @@
 
 ;;======================bring out the lathe===============================================
 (defproto =rotary= (=meshed=)
-  ((curve) ;;2d vertices in x-z plane
-   (numsegs 5)))
+  (curve ;;=curve object
+   (numsegs 5) ;;the number of sides to turn ;;TODO: rename
+   vertex-normals
+   vertices ;;2d array))
 
+;;DOING: use new curves and smart attaching to form the object
+;; DOING: the rotary should really hold a 2d array of the faces
 ;;TODO: curves should already contain the information wether their corners are smooth, this should be put into vertex-normals(=predefined-vertex-normals= mixin, perhaps) and used in drawing for speed gains
+
+(defreply turn ((r =rotary=))
+	  (with-properties (faces vertices (num-angles numsegs) curve) r
+	    (let ((num-segs (1- (length curve)))
+		  ;;number of verts in one cross section
+		  (num-cs-verts (length curve)))
+	      ;;first dimension: down, second dimension: around
+	      (setf vertices (make-array (list num-cs-verts num-angles)))
+	      (loop for i from 0 below num-angles
+		 for angle from 0 by (/ (* 2 pi) num-segs)
+		 do (loop for j from 0 below num-cs-verts
+		       do
+		       (setf (aref vertices j i)
+			     (make =vertex= :point
+				   (let ((cx (svref point 0))
+					 (cz (svref point 1)))
+				     (vector (* cx (cos angle))
+					     (* cx (sin angle))
+					     cz)))))))))
+
+
+;;the old an working one:
 (defreply turn ((r =rotary=))
 	  (with-properties (numsegs curve) r
 	    (assert (>= numsegs 4)) ;;TODO find the bug with 3 segs

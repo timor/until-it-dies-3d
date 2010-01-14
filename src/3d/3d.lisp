@@ -78,3 +78,10 @@
       ;;already have engine running
       :already-have-threaded-engine
       (sb-thread:make-thread (lambda () (run engine)) :name '3dsheep-thread)))
+
+;;TODO: test on PC where gl stuff works
+;;this is needed to ensure proper execution context, use this if collisions with draw routines exist
+(defmacro run-in-context (engine &body code)
+  `(push (lambda ()
+	   ,@code)
+	 (hooks ,engine)))

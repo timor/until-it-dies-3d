@@ -107,9 +107,15 @@
    (d 0)
    (ref #(1 0 0))))
 
-(defun tol= (a b &key (tolerance *tolerance*))
+(defreply tol= ((a =number=) (b =number=) &key (tolerance *tolerance*))
   (<= (abs (- a b))
       tolerance))
+
+(defreply tol= ((a =vector=) (b =vector=) &key (tolerance *tolerance*))
+	  (when (= (length a) (length b))
+	    (reduce (lambda (x y) (and x y))
+		    (map 'list (lambda (i j) (tol= i j :tolerance tolerance))
+			 a b))))
 
 (defun point-on-plane (point plane &key (tolerance *tolerance*))
   (with-properties (a b c d) plane

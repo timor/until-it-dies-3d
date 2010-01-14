@@ -106,15 +106,24 @@
 (defreply next-in-face ((eu =edge-use=))
 	  (with-properties (face) eu
 	    (find (end eu) (edge-uses face) :key 'start)))
-;;some construction helpers:
 
 
+;;==================some construction helpers:
 (defreply used-by ((vertex =vertex=) (edge =edge=))
 	  (or (eq vertex (start edge))
 	      (eq vertex (end edge))))
 
+;;this one uses tolerance!
+(defreply used-by ((point =vector=) (edge =edge=))
+	  (assert (typep point '(vector number 3)))
+	  (or (tol= point (point (start edge)))
+	      (tol= point (point (end edge)))))
+
 (defreply used-by ((vertex =vertex=) (eu =edge-use=))
 	  (used-by vertex (edge eu)))
+
+(defreply used-by ((point =vector=) (eu =edge-use=))
+	  (used-by point (edge eu)))
 
 (defreply used-by ((vertex =vertex=) (face =face=))
 	  (member vertex (vertices face)))
@@ -125,7 +134,7 @@
 (defreply used-by ((edge =edge=) (face =face=))
 	  (member edge (edge-uses face) :key #'edge))
 
-
+;;===================makers==============
 ;;KISS vertex construction
 (defreply make ((proto =vertex=) &key point)
 	  (check-type point (vector number *))
@@ -141,36 +150,6 @@
 		    (end (if v2 v2
 			     (make =vertex= :point p2))))
 		(call-next-reply proto 'start start 'end end))))
-
-;;TODO: extend to same positions instead of only vertices
-;;works if the same vertices are used, if more than two faces are already connected
-;;edges of oldface are not touched, while edge of newface will be released if connection is found
-;;DONE: need to set reversedp on new edge-use correctly
-(defreply attach ((newface =face=) (oldface =face=))
-	  ;;first find two vertices which both have in common
-	  (let ((common-vertices (loop for v1 in (vertices newface)
-				    when (member v1 (vertices oldface))
-				    collect v1)))
-	    (when (= 2 (length common-vertices)) ;;only continue if this is simple (should be the case fo most convex faces)
-	      (let* ((v1 (first common-vertices))
-		     (v2 (second common-vertices))
-		     ;;get the corresponding edge-uses on both sides
-		     (old-eu (loop for eu in (edge-uses oldface)
-				when (and (used-by v1 eu)
-					  (used-by v2 eu))
-				return eu))
-		     (new-eu (loop for eu in (edge-uses newface)
-				when (and (used-by v1 eu)
-					  (used-by v2 eu))
-				return eu)))
-		;;check reversity
-		(when (not (eql (first (vertices old-eu))
-				(first (vertices new-eu))))
-		  (setf (reversedp new-eu) t))
-		;;SYNERGIZE edges and edge-uses
-		(setf (edge new-eu) (edge old-eu))
-		(setf (partner old-eu) new-eu)
-		(setf (partner new-eu) old-eu)))))
 
 ;;face construction, methods can be :edges :edge-uses :points or :vertices
 ;;TODO: throw :neighbors out, clever attaching should be used instead
@@ -199,10 +178,6 @@
 		     do (attach fresh-face n))
 		fresh-face)))
 
-(defreply center ((f =face=))
-	  (apply #'3p-average (mapcar 'point (vertices f))))
-
-
 ;;make ourselves known to our edge-uses, although thats probably not good,
 ;;because it messes up the hierarchy and may disturb the gc, too
 ;;wouldnt be a linked half-edge list otherwise, though
@@ -217,12 +192,52 @@
        collect (face (partner eu))))
 
 
+;=============modifiers/helpers===========================
+
+;;DONE: extend to same positions instead of only vertices TODO test with rotary
+;;works if the same vertices are used, if more than two faces are already connected
+;;edges of oldface are not touched, while edge of newface will be released if connection is found
+;;DONE: need to set reversedp on new edge-use correctly
+(defreply attach ((newface =face=) (oldface =face=))
+	  ;;first find two vertices which both have in common
+	  (let ((common-vertices (loop for v1 in (vertices newface)
+				    when (member (point v1) (mapcar 'point (vertices oldface))
+						 :test 'tol=)
+				    collect v1)))
+	    (when (= 2 (length common-vertices)) ;;only continue if this is simple (should be the case fo most convex faces)
+	      (let* ((v1 (first common-vertices))
+		     (v2 (second common-vertices))
+		     ;;get the corresponding edge-uses on both sides
+		     (old-eu (loop for eu in (edge-uses oldface)
+				when (and (used-by (point v1) eu)
+					  (used-by (point v2) eu))
+				return eu))
+		     (new-eu (loop for eu in (edge-uses newface)
+				when (and (used-by (point v1) eu)
+					  (used-by (point v2) eu))
+				return eu)))
+		;;check reversity
+		(when (not (tol= (point (first (vertices old-eu)))
+				 (point (first (vertices new-eu)))))
+		  (setf (reversedp new-eu) t))
+		;;SYNERGIZE edges and edge-uses
+		(setf (edge new-eu) (edge old-eu))
+		(setf (partner old-eu) new-eu)
+		(setf (partner new-eu) old-eu)))))
+
+
+(defreply center ((e =edge=))
+	  (3p-average (start e) (end e)))
+
+(defreply center ((f =face=))
+	  (apply #'3p-average (mapcar 'point (vertices f))))
+
 ;;DONE: corner neighbours, only works on solids for now, invalid on "edges" of a constellation
 (defreply neighbors-at-vertex ((f =face=) (v =vertex=))
-  (if (not (used-by v f))
-      (error "trying to get neighbors at a vertex that is not part of the face")
-      (loop with start-eu = (find v (edge-uses f) :key 'end)
-	   for next-eu = (partner (next-in-face start-eu)) then (partner (next-in-face next-eu))
-	   collect (face next-eu)
-	   until (or (null next-eu)
-		     (eq next-eu start-eu)))))
+	  (if (not (used-by v f))
+	      (error "trying to get neighbors at a vertex that is not part of the face")
+	      (loop with start-eu = (find v (edge-uses f) :key 'end)
+		 for next-eu = (partner (next-in-face start-eu)) then (partner (next-in-face next-eu))
+		 collect (face next-eu)
+		 when (null next-eu) (return nil)
+		 until (eq next-eu start-eu))))
