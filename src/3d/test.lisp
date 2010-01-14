@@ -8,14 +8,14 @@
 (in-package #:uid)
 
 ;;test objects
-(defparameter te (create =3dsheep=))
+(defparameter te (make =3dsheep=))
 
 #+sbcl 
 (run-in-thread te)
 #-sbcl 
 (run te)
 
-(defparameter *axes* (create =3dobject=
+(defparameter *axes* (make =3dobject=
 			     'p0 (make-point 0 0 0)
 			     'px (make-point 1 0 0)
 			     'py (make-point 0 1 0)
@@ -44,7 +44,7 @@
 	    #(2 4)
 	    #(1 5)))
 
-(defparameter r1 (create =rotary=
+(defparameter r1 (make =rotary=
 		   'curve c1
 		   'numsegs 5))
 (setf (numsegs r1) 5)
@@ -69,7 +69,7 @@
 		      (draw-line p1 p2 :color *orange*))))))
 (schedule-recompile r1)
 
-;;now create a camera
+;;now make a camera
 (defparameter tv (current-3dview te))
 
 (change-view-to-camera tv)
@@ -81,7 +81,7 @@
 	  (update (current-3dview te) dt))
 
 (defun v3 (vec)
-  (create =vertex= :point vec))
+  (make =vertex= :point vec))
 
 ;;test the construction of a cube by hand
 (defparameter cvs
@@ -110,12 +110,12 @@
 	      (loop for v in (mapcar #'point (vertices f)) do
 		   (gl:vertex (svref v 0) (svref v 1) (svref v 2))))))
 
-;;create the first face
+;;make the first face
 
-(defparameter f1 (create =face= :vertices (mapcar (fun (nth _ cvs)) (first cinds))))
-(defparameter f3 (create =face= :vertices (mapcar (fun (nth _ cvs)) (car (last cinds)))))
+(defparameter f1 (make =face= :vertices (mapcar (fun (nth _ cvs)) (first cinds))))
+(defparameter f3 (make =face= :vertices (mapcar (fun (nth _ cvs)) (car (last cinds)))))
 
-(defparameter f2 (create =face= :vertices (mapcar (fun (nth _ cvs)) (second cinds))
+(defparameter f2 (make =face= :vertices (mapcar (fun (nth _ cvs)) (second cinds))
 			 :neighbors (list f1 f3)))
 
 (loop for f in (list f1 f2 f3) do

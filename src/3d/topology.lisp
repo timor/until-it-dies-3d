@@ -127,19 +127,19 @@
 
 
 ;;KISS vertex construction
-(defreply create ((proto =vertex=) &key point)
+(defreply make ((proto =vertex=) &key point)
 	  (check-type point (vector number *))
 	  (call-next-reply proto 'point point))
 
 ;;edge construction, can be vertices or points
-(defreply create ((proto =edge=) &key v1 v2 p1 p2)
+(defreply make ((proto =edge=) &key v1 v2 p1 p2)
 	  (if (or (and v1 p1)
 		  (and p2 v2))
 	      (error "wanted only one out of :v1/2 or :p1/2")
 	      (let ((start (if v1 v1
-			       (create =vertex= :point p1)))
+			       (make =vertex= :point p1)))
 		    (end (if v2 v2
-			     (create =vertex= :point p2))))
+			     (make =vertex= :point p2))))
 		(call-next-reply proto 'start start 'end end))))
 
 ;;TODO: extend to same positions instead of only vertices
@@ -174,7 +174,7 @@
 
 ;;face construction, methods can be :edges :edge-uses :points or :vertices
 ;;TODO: throw :neighbors out, clever attaching should be used instead
-(defreply create ((proto =face=) &key edge-uses edges points vertices neighbors)
+(defreply make ((proto =face=) &key edge-uses edges points vertices neighbors)
 	  (if (not (= 1 (count t (mapcar (fun (not (null _)))
 					 (list edge-uses edges points vertices)))))
 	      (error "wanted exactly one out of :edges :points :vertices :edge-uses")
@@ -182,18 +182,18 @@
 		     (cond (edge-uses
 			    (call-next-reply proto 'edge-uses edge-uses))
 			   (edges
-			    (create proto :edge-uses (mapcar (fun
-							       (create =edge-use= 'edge _))
+			    (make proto :edge-uses (mapcar (fun
+							       (make =edge-use= 'edge _))
 							     edges)))
 			   (vertices
-			    (create proto
+			    (make proto
 				    :edges (loop for sublist on vertices
-					      collect (create =edge=
+					      collect (make =edge=
 							      :v1 (first sublist)
 							      :v2 (or (second sublist)
 								      (first vertices))))))
 			   (points
-			    (create proto :vertices (mapcar (fun (create =vertex= :point _))
+			    (make proto :vertices (mapcar (fun (make =vertex= :point _))
 							    points))))))
 		(loop for n in neighbors
 		     do (attach fresh-face n))

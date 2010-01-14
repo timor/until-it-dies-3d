@@ -2,23 +2,37 @@
 
 (in-package #:uid)
 
-
+;;simple curve that knows its normal and which corner vertices are smooth
 ;;curve points are pairs of the form (position smoothp) or just simple points
 (defproto =curve= ()
   (curve-points))
 
-(defun curve-point-p (thingy)
-  (when (listp thingy)
-    (when (first thingy)
-    (or (eq (second thingy) nil)
-	(eq (second thingy) t)))))
+(defun ensure-curve-point (thingy)
+  (if (listp thingy)
+      (when (and (typep (first thingy) '(vector number 2))
+		 (or (eq (second thingy) nil)
+		     (eq (second thingy) t)))
+	thingy)
+      (if (typep thingy '(vector number 2))
+	  (list thingy nil)
+	  (error "cant make curve point out of: ~a" thingy))))
 
-(defreply create ((proto =curve=) &key curve-points)
-  (call-next-reply 'curve-points
-		   (loop for cp in curve-points collect
-			(if (curve-point-p cp)
-			    cp
-			    (progn
-			     (assert (typep cp 'vector))
-			     (list cp nil))
-			    ))))
+(defreply points ((c =curve=))
+  (mapcar 'first (curve-points c)))
+
+(defreply make ((proto =curve=) &rest curve-points)
+  (call-next-reply proto 'curve-points
+		   (mapcar 'ensure-curve-point curve-points)))
+
+(defreply point-normals ((c =curve=))
+  (append (list nil)
+	  (loop for sublist on (points c)
+	     for p1 = (first sublist)
+	     for p2 = (second sublist)
+	     for p3 = (third sublist)
+	     while p3
+	     collect (let ((v1 (vector+ (vector-between p1 p2)
+					(vector-between p2 p3))))
+		       (normalize! (vector (svref v1 1)
+					   (- (svref v1 0))))))
+	  (list nil)))

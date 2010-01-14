@@ -100,8 +100,8 @@
 		   (numverts (* clength numsegs))
 		   (zp (first curve))
 		   (np (car (last curve)))
-		   (zenith (create =vertex= :point (vector 0 0 (svref zp 1))))
-		   (nadir (create =vertex= :point (vector 0 0 (svref np 1))))
+		   (zenith (make =vertex= :point (vector 0 0 (svref zp 1))))
+		   (nadir (make =vertex= :point (vector 0 0 (svref np 1))))
 		   )
 	      (loop 
 		 for vnum from 0 by clength
@@ -114,7 +114,7 @@
 			   for i from 0 by 1
 			   collect
 			   (let ((new-vertex
-				  (create =vertex=
+				  (make =vertex=
 					  :point (vector (* (cos angle) ovx)
 							 (* (sin angle) ovx)
 							 ovz))))
@@ -136,7 +136,7 @@
 		       do
 		       (let ((new-face
 			      (cond ((= i 0)
-				     (create =face= :vertices
+				     (make =face= :vertices
 					     (list
 					      (nth (1+  j) vertices)
 					      zenith
@@ -144,7 +144,7 @@
 					     :neighbors fs
 					     ))
 				    ((= i clength)
-				     (create =face= :vertices 
+				     (make =face= :vertices 
 					     (list
 					      (nth (mod (+ j clength) numverts) vertices)
 					      nadir
@@ -152,7 +152,7 @@
 					     :neighbors fs
 					     ))
 				    (t
-				     (create =face= :vertices
+				     (make =face= :vertices
 					     (mapcar (fun (nth _ vertices))
 						     (reverse (list
 							       j

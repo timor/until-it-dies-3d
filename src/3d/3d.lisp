@@ -32,7 +32,7 @@
    3d-content))
 
 (defreply shared-init :after ((3ds =3dsheep=) &key)
-	  (setf (current-3dview 3ds) (create =3dview=))
+	  (setf (current-3dview 3ds) (make =3dview=))
 	  (with-properties (width height aspect) (current-3dview 3ds)
 	    (setf aspect (/ (window-width 3ds) (window-height 3ds))
 		  width (window-width 3ds)
