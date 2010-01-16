@@ -1,5 +1,11 @@
 (in-package #:uid)
 
+;;=============3d=======
+(defmessage draw-2d (engine &key)
+  (:documentation "the 'top-level' drawing routine for the engine in 2d context"))
+
+(defmessage draw-3d (engine &key)
+  (:documentation "see abovish"))
 
 ;;========3dobject=============
 ;;nice lil' shortcut for interactive stuff placement

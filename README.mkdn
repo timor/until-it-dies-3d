@@ -2,8 +2,14 @@ About 3D
 ========
 This is a experimental fork targeted at adding 3d support to until-it-dies
 There is not much to see yet, and chances are what can be seen is pretty slow.
-If you want to see something, load test.lisp in the 3d directory and run the sample engine there
 
+There is an example in the demo folder, it can be run with following commands:
+(asdf:oos 'asdf:load-op :until-it-dies.3d)
+(asdf:oos 'asdf:load-op :until-it-dies.3d-example)
+(uid-demo-3d:run-demo)
+
+that example just builds a funny body and lets you move the camera around it 
+with middle mouse button and mouse wheel
 
 About
 =====

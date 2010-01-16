@@ -6,7 +6,7 @@
   :maintainer "Josh Marchán <sykopomp@sykosomatic.org>"
   :author "Josh Marchán <sykopomp@sykosomatic.org>"
   :licence "MIT"
-  :depends-on (until-it-dies.base until-it-dies.graphics until-it-dies.sound))
+  :depends-on (until-it-dies.base until-it-dies.graphics until-it-dies.sound until-it-dies.3d))
 
 (asdf:defsystem until-it-dies.examples
   :version "0.1 (unreleased)"

@@ -31,6 +31,21 @@
    2d-content
    3d-content))
 
+;;DONE: test on PC where gl stuff works -> does
+;;this is needed to ensure proper execution context, use this if collisions with draw routines exist
+(defmacro run-in-context (engine &body code)
+  `(push (lambda ()
+	   ,@code)
+	 (hooks ,engine)))
+
+(defreply (setf current-3dview) :after (new-val (e =3dsheep=))
+	  (declare (ignore new-val))
+	  (with-properties (width height aspect) (current-3dview e)
+	    (setf aspect (/ (window-width e) (window-height e))
+		  width (window-width e)
+		  height (window-height e))))
+
+;;TODO: check if that redundancy is needed, shouldnt be
 (defreply shared-init :after ((3ds =3dsheep=) &key)
 	  (setf (current-3dview 3ds) (make =3dview=))
 	  (with-properties (width height aspect) (current-3dview 3ds)
@@ -41,16 +56,24 @@
 (defreply init :after ((e =3dsheep=))
 	  (gl:enable :depth-test))
 
+
 ;;DOING: cache the view matrices directly or as display lists
 ;;modify draw stuff to incorporate new 3dness
+;;TODO: ensure that 2d stuff still works
+;;DOING: split into draw-2d and draw-3d?
+
+;;default replies
+(defreply draw-2d ((e =3dsheep=) &key)
+  (draw (2d-content e)))
+
+(defreply draw-3d ((e =3dsheep=) &key)
+  (draw (3d-content e)))
+
 (defreply draw ((e =3dsheep=) &key)
-	  (with-properties (2d-content 3d-content current-view current-3dview) e
-	    (when 3d-content
-	      (set-view current-3dview)
-	      (draw 3d-content))
-	    (when 2d-content
-	      (set-view current-view)
-	      (draw 2d-content))))
+	  (set-view (current-3dview e))  
+	  (draw-3d e)
+	  (set-view (current-view e))
+	  (draw-2d e))
 
 ;;draw all kinds of things
 (defreply draw ((l =list=) &key)
@@ -68,6 +91,15 @@
 	  (setf (2d-content e) (remove o (2d-content e)))
 	  (setf (3d-content e) (remove o (3d-content e))))
 
+(defreply clear ((e =3dsheep=))
+  "remove all 3d content from engine"
+  (if (runningp e)
+      (run-in-context e
+	(loop for c in (3d-content e) do
+	     (remove-content e c)))
+      (loop for c in (3d-content e) do
+	   (remove-content e c))))
+
 ;now lets get our repl back!========================
 	  
 #+sbcl
@@ -79,9 +111,3 @@
       :already-have-threaded-engine
       (sb-thread:make-thread (lambda () (run engine)) :name '3dsheep-thread)))
 
-;;TODO: test on PC where gl stuff works
-;;this is needed to ensure proper execution context, use this if collisions with draw routines exist
-(defmacro run-in-context (engine &body code)
-  `(push (lambda ()
-	   ,@code)
-	 (hooks ,engine)))

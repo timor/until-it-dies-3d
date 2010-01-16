@@ -10,7 +10,7 @@
 ;;test objects
 (defparameter te (make =3dsheep=))
 
-#+sbcl 
+#+sbcl
 (run-in-thread te)
 #-sbcl 
 (run te)
@@ -31,18 +31,18 @@
 
 
 ;;(add-content te *axes*)
-(defreply draw :before ((e te) &key)
+(defreply draw-3d :before ((e te) &key)
 	  (draw *axes*))
 
 ;;dont see anything because the 3d-content of te is empty
 
-(defparameter c1 (list
-	    #(1 0)
-	    #(2 1)
-	    #(1.5 2)
-	    #(2 3)
-	    #(2 4)
-	    #(1 5)))
+(defparameter c1 (make =curve=
+		       #(1 0)
+		       #(2 1)
+		       #(1.5 2)
+		       #(2 3)
+		       #(2 4)
+		       #(1 5)))
 
 (defparameter r1 (make =rotary=
 		   'curve c1
@@ -51,7 +51,7 @@
 (turn r1)
 (add-content te r1)
 
-(setf (numsegs r1) 20)
+(setf (numsegs r1) 12)
 
 (turn r1)
 (schedule-recompile r1)

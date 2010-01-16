@@ -153,30 +153,38 @@
 
 ;;face construction, methods can be :edges :edge-uses :points or :vertices
 ;;TODO: throw :neighbors out, clever attaching should be used instead
-(defreply make ((proto =face=) &key edge-uses edges points vertices neighbors)
-	  (if (not (= 1 (count t (mapcar (fun (not (null _)))
-					 (list edge-uses edges points vertices)))))
-	      (error "wanted exactly one out of :edges :points :vertices :edge-uses")
-	      (let ((fresh-face
-		     (cond (edge-uses
-			    (call-next-reply proto 'edge-uses edge-uses))
-			   (edges
-			    (make proto :edge-uses (mapcar (fun
-							       (make =edge-use= 'edge _))
-							     edges)))
-			   (vertices
-			    (make proto
-				    :edges (loop for sublist on vertices
-					      collect (make =edge=
-							      :v1 (first sublist)
-							      :v2 (or (second sublist)
-								      (first vertices))))))
-			   (points
-			    (make proto :vertices (mapcar (fun (make =vertex= :point _))
-							    points))))))
-		(loop for n in neighbors
-		     do (attach fresh-face n))
-		fresh-face)))
+;;smooth list shall be considered when creating edges
+(defreply make ((proto =face=) &key edge-uses edges points vertices neighbors smooth-list)
+  (if (not (= 1 (count t (mapcar (fun (not (null _)))
+				 (list edge-uses edges points vertices)))))
+      (error "wanted exactly one out of :edges :points :vertices :edge-uses")
+      (let ((fresh-face
+	     (cond (edge-uses
+		    (call-next-reply proto 'edge-uses edge-uses))
+		   (edges
+		    (make proto :edge-uses (mapcar (fun
+						     (make =edge-use= 'edge _))
+						   edges)))
+		   (vertices
+		    (make proto
+			  :edges (loop for sublist on vertices
+				    collect (make =edge=
+						  :v1 (first sublist)
+						  :v2 (or (second sublist)
+							  (first vertices))))
+			  ))
+		   (points
+		    (make proto 
+			  :vertices (mapcar (fun (make =vertex= :point _))
+					    points)
+			  )))))
+	(loop for n in neighbors
+	   do (attach fresh-face n))
+	(when smooth-list
+	  (loop for e in (edges fresh-face)
+	     for smoothp in smooth-list do
+	     (setf (smoothp e) smoothp)))
+	fresh-face)))
 
 ;;make ourselves known to our edge-uses, although thats probably not good,
 ;;because it messes up the hierarchy and may disturb the gc, too
@@ -190,6 +198,18 @@
   (loop for eu in (edge-uses f)
        when (partner eu)
        collect (face (partner eu))))
+
+(defreply is-neighbor ((f1 =face=) (f2 =face=))
+  (let ((n nil))
+    (loop for e1 in (edges f1) do
+	 (when (used-by e1 f2)
+	   (setf n t)))
+    n))
+
+(defreply common-edge ((f1 =face=) (f2 =face=))
+  (loop for e2 in (edges f2)
+       when (used-by e2 f1)
+       return e2))
 
 
 ;=============modifiers/helpers===========================
@@ -232,12 +252,14 @@
 (defreply center ((f =face=))
 	  (apply #'3p-average (mapcar 'point (vertices f))))
 
-;;DONE: corner neighbours, only works on solids for now, invalid on "edges" of a constellation
+;;DONE: corner neighbours, only works on solids for now, returns nil if it detects being on an edge
+;;DOING: :only-smoothp
 (defreply neighbors-at-vertex ((f =face=) (v =vertex=))
+  "return neighbouring faces at vertex, perhaps only the ones connected with smooth edges"
 	  (if (not (used-by v f))
 	      (error "trying to get neighbors at a vertex that is not part of the face")
 	      (loop with start-eu = (find v (edge-uses f) :key 'end)
 		 for next-eu = (partner (next-in-face start-eu)) then (partner (next-in-face next-eu))
 		 collect (face next-eu)
-		 when (null next-eu) (return nil)
+		 when (null next-eu) do (return nil)
 		 until (eq next-eu start-eu))))

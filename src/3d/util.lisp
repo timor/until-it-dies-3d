@@ -1,7 +1,7 @@
 ;;; -*- Mode:Lisp; Syntax:ANSI-Common-Lisp; Coding:utf-8 -*-
 ;;TODO: the tolerance stuff should probably be put in a different file
 ;;TODO: try to make a new type for precision-limited numbers
-;; about tolerances: whenever some point in space is created, 
+;; about tolerances: whenever some point in space is compared, tol= should be used
 
 
 (in-package #:uid)
@@ -47,9 +47,7 @@
   (declare (ignorable pin))
   (normalize!
    (cross-product-3d (vector-between p1 p2)
-		     (vector-between p2 p3))
-   )
-  )
+		     (vector-between p2 p3))))
 
 
 ;;math
@@ -93,6 +91,7 @@
 (defun deg2rad (x)
   (* pi (/ x 180.0)))
 
+;;DOING fixing margin on both ends
 (defun clamp(val min max &optional margin)
   "limit val between min and max, optionally inset by margin, such that the extremes may not be met"
   (if margin

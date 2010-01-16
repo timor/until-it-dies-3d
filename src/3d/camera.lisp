@@ -76,7 +76,7 @@
 		    phi (atan y x))
 	      (setf rho (max 0.1 (+ rho drho))
 		    phi (+ phi (deg2rad dphi))
-		    theta (clamp (+ theta (deg2rad dtheta)) (- pi) pi 0.01))
+		    theta (clamp (+ theta (deg2rad dtheta)) 0 pi 0.001))
 	      (move-to cam (3dp
 			    (+ cx (* rho (sin theta) (cos phi)))
 			    (+ cy (* rho (sin theta) (sin phi)))

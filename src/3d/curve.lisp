@@ -18,7 +18,12 @@
 	  (error "cant make curve point out of: ~a" thingy))))
 
 (defreply points ((c =curve=))
+  "returns only the position part of a point"
   (mapcar 'first (curve-points c)))
+
+(defreply smoothp-list ((c =curve=))
+  "return a list with corresponding smoothp values of curve points, useful for iterating"
+  (mapcar 'second (curve-points c)))
 
 (defreply make ((proto =curve=) &rest curve-points)
   (call-next-reply proto 'curve-points

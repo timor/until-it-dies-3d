@@ -41,31 +41,20 @@
 
 ;;DONE: making that a reply on face and return a list of all the normals
 ;;DONE: use half-edgeity to only check concerning faces
+;;DOING: need to check smoothity correctly ;;TODO: debug why normals arent exactly the same sometimes
 (defreply vertex-normals-in ((face =face=) (m =meshed=))
 	  (let (normal-faces ;this one is always included in the calculation
 		(vertices (vertices face))) 
 	    ;;look at all faces that contain the vertex
 	    (loop for vertex in vertices 
-	       do (setf normal-faces (list face))
+	       do (setf normal-faces ())
 	       collect
-		 (normalize! (apply #'vector+ (mapcar #'normal (neighbors-at-vertex face vertex)))))))
-
-;;DONE: need to normalize normals :)
-(defun 3p-normal (p1 p2 p3 &optional pin)
-  "calculate the normal for the given points, where points are in ccw order, or alternatively pi is a point facing away from the normals"
-  (declare (ignorable pin))
-  (normalize!
-   (cross-product-3d (vector-between p1 p2)
-		     (vector-between p2 p3))
-   )
-  )
-
-;;UTIL:
-(defun positions (item sequence &key from-end (start 0) end key test test-not)
-  (let ((found (position item sequence :from-end from-end :start start :end end :key key :test test :test-not test-not)))
-    (when found
-      (cons found 
-	    (positions item sequence :from-end from-end :start (+ 1 found) :end end :key key :test test :test-not test-not)))))
+	       (normalize! (apply #'vector+ (normal face) (mapcar #'normal 
+						    (remove-if (lambda (nf)
+							     (let ((ce (common-edge nf face)))
+							       (and ce
+								    (not (smoothp ce)))))
+								   (neighbors-at-vertex face vertex))))))))
 
 ;;DONE: fix index loop here
 ;;TODO: rewrite into auto-smooth
@@ -89,109 +78,101 @@
 (defproto =rotary= (=meshed=)
   (curve ;;=curve object
    (numsegs 5) ;;the number of sides to turn ;;TODO: rename
-   vertex-normals
-   vertices ;;2d array))
+   ))
 
-;;DOING: use new curves and smart attaching to form the object
-;; DOING: the rotary should really hold a 2d array of the faces
-;;TODO: curves should already contain the information wether their corners are smooth, this should be put into vertex-normals(=predefined-vertex-normals= mixin, perhaps) and used in drawing for speed gains
-
+;;the old an working one: WHICH I AM extending to work with smooth curves now -> DONE, kinda
 (defreply turn ((r =rotary=))
-	  (with-properties (faces vertices (num-angles numsegs) curve) r
-	    (let ((num-segs (1- (length curve)))
-		  ;;number of verts in one cross section
-		  (num-cs-verts (length curve)))
-	      ;;first dimension: down, second dimension: around
-	      (setf vertices (make-array (list num-cs-verts num-angles)))
-	      (loop for i from 0 below num-angles
-		 for angle from 0 by (/ (* 2 pi) num-segs)
-		 do (loop for j from 0 below num-cs-verts
-		       do
-		       (setf (aref vertices j i)
-			     (make =vertex= :point
-				   (let ((cx (svref point 0))
-					 (cz (svref point 1)))
-				     (vector (* cx (cos angle))
-					     (* cx (sin angle))
-					     cz)))))))))
+  (with-properties ((num-angles numsegs)) r
+		   (let ((curve (points (curve r)))
+			 (smoothp-list (smoothp-list (curve r))))
+		     (assert (>= num-angles 4)) ;;TODO find the bug with 3 segs
+		     (let* (vertices
+			    faces
+			    (clength (length curve))
+			    (numverts (* clength num-angles))
+			    (zp (first curve))
+			    (np (car (last curve)))
+			    (zenith (make =vertex= :point (vector 0 0 (svref zp 1))))
+			    (nadir (make =vertex= :point (vector 0 0 (svref np 1))))
+			    )
+		       (loop 
+			for vnum from 0 by clength
+			for angle from 0 below (* 2 pi) by (/ (* 2 pi) num-angles)
+			;;collect vertices
+			append (loop 
+				for ov in curve
+				for ovx = (svref ov 0)
+				for ovz = (svref ov 1)
+				for i from 0 by 1
+				collect
+				(let ((new-vertex
+				       (make =vertex=
+					     :point (vector (* (cos angle) ovx)
+							    (* (sin angle) ovx)
+							    ovz))))
+				  (setf (property-value new-vertex 'rotary-angle) angle
+					(property-value new-vertex 'rotary-original-point) ov
+					(property-value new-vertex 'rotary-point-number) (+ vnum i))
+				  new-vertex)) into verts
+			finally (setf vertices verts))
+		       (setf vertices (append vertices (list zenith nadir)))
+		       ;;second run: build up the faces
+		       (loop
+			with fs = ()
+			for vnum from 0 by clength
+			for angle from 0 below (* 2 pi) by (/ (* 2 pi) num-angles) ;;across
+			do (loop
+			    for i from 0 to clength
+			    for j from (1-  vnum) by 1 ;;down
+			    for smoothp = nil then (nth (1- i) smoothp-list)
+			    do
+			    (let ((new-face
+				   (cond ((= i 0)
+					  (make =face= :vertices
+						(list
+						 zenith
+						 (nth (mod (+ 1 j clength) numverts) vertices)
+						 (nth (1+  j) vertices)
+						 )
+						:neighbors fs
+						:smooth-list '(t nil t)
+						))
+					 ((= i clength)
+					  (make =face= :vertices 
+						(list
+						 (nth j vertices)
+						 (nth (mod (+ j clength) numverts) vertices)
+						 nadir)
+						:neighbors fs
+						:smooth-list `(,smoothp t t)
+						))
+					 (t
+					  (make =face= :vertices
+						(mapcar (fun (nth _ vertices))
+							(list
+							; j
+							 ;(+ j 1)
+							 ;(mod (+ j clength 1) numverts)
+							 ;(mod (+ j clength) numverts)
 
+							 j
+							 (mod (+ j clength) numverts)
+							 (mod (+ j clength 1) numverts)
+							 (+ j 1)
 
-;;the old an working one:
-(defreply turn ((r =rotary=))
-	  (with-properties (numsegs curve) r
-	    (assert (>= numsegs 4)) ;;TODO find the bug with 3 segs
-	    (let* (vertices
-		   faces
-		   (clength (length curve))
-		   (numverts (* clength numsegs))
-		   (zp (first curve))
-		   (np (car (last curve)))
-		   (zenith (make =vertex= :point (vector 0 0 (svref zp 1))))
-		   (nadir (make =vertex= :point (vector 0 0 (svref np 1))))
-		   )
-	      (loop 
-		 for vnum from 0 by clength
-		 for angle from 0 below (* 2 pi) by (/ (* 2 pi) numsegs)
-		 ;;collect vertices
-		 append (loop 
-			   for ov in curve
-			   for ovx = (svref ov 0)
-			   for ovz = (svref ov 1)
-			   for i from 0 by 1
-			   collect
-			   (let ((new-vertex
-				  (make =vertex=
-					  :point (vector (* (cos angle) ovx)
-							 (* (sin angle) ovx)
-							 ovz))))
-			     (setf (property-value new-vertex 'rotary-angle) angle
-				   (property-value new-vertex 'rotary-original-point) ov
-				   (property-value new-vertex 'rotary-point-number) (+ vnum i))
-			     new-vertex)) into verts
-		 finally (setf vertices verts))
-	      ;;second run: build up the faces
-	      (setf vertices (append vertices (list zenith nadir)))
-	      (loop
-		 with fs = ()
-		 for vnum from 0 by clength
-		 for angle from 0 below (* 2 pi) by (/ (* 2 pi) numsegs)
-		 ;;collect faces (topology stuff)
-		 do (loop
-		       for i from 0 to clength
-		       for j from (1-  vnum) by 1
-		       do
-		       (let ((new-face
-			      (cond ((= i 0)
-				     (make =face= :vertices
-					     (list
-					      (nth (1+  j) vertices)
-					      zenith
-					      (nth (mod (+ 1 j clength) numverts) vertices))
-					     :neighbors fs
-					     ))
-				    ((= i clength)
-				     (make =face= :vertices 
-					     (list
-					      (nth (mod (+ j clength) numverts) vertices)
-					      nadir
-					      (nth j vertices))
-					     :neighbors fs
-					     ))
-				    (t
-				     (make =face= :vertices
-					     (mapcar (fun (nth _ vertices))
-						     (reverse (list
-							       j
-							       (+ j 1)
-							       (mod (+ j clength 1) numverts)
-							       (mod (+ j clength) numverts)
-							       )))
-					     :neighbors fs
-					     )))))
-			 (setf (property-value new-face 'rotary-curve-segment) clength)
-			 (loop for e in (edges new-face) do (setf (smoothp e) t))
-			 (push new-face fs)))
-		 finally (setf faces fs))
-	      (setf (faces r) faces)))
-	  ;;(setf (need-recompile r) t)
-	  r)
+							 ))
+						:neighbors fs
+						:smooth-list `(,smoothp t nil t)
+						)))))
+			      (setf (property-value new-face 'rotary-curve-segment) clength)
+			      (push new-face fs)))
+			finally (setf faces fs))
+		       (setf (faces r) faces))))
+  ;;(setf (need-recompile r) t)
+  r)
+
+(defreply make :after ((r =rotary=) &key)
+	  (with-properties (curve) r
+	    (when curve
+	      (turn r))))
+
