@@ -9,7 +9,7 @@
    (up (3dp 0 0 1))
    (fov 45)
    (aspect 1)
-   ;;following are just copied from 3dsheep, need to be updated when resized
+   ;;following are just copied from =3dsheep=, need to be updated when resized
    width
    height))
 
@@ -28,7 +28,7 @@
 ;;for now put default lighting in here
 (defreply set-view ((view =3dview=))
 	  (with-properties (width height fov aspect eye center up) view
-	    (gl:clear :depth-buffer-bit)
+	    ;;(gl:clear :depth-buffer-bit) done by :uid
 	    (gl:viewport 0 0 width height)
 	    (gl:matrix-mode :projection)
 	    (gl:load-identity)

@@ -41,20 +41,29 @@
 
 ;;DONE: making that a reply on face and return a list of all the normals
 ;;DONE: use half-edgeity to only check concerning faces
-;;DOING: need to check smoothity correctly ;;TODO: debug why normals arent exactly the same sometimes
-(defreply vertex-normals-in ((face =face=) (m =meshed=))
-	  (let (normal-faces ;this one is always included in the calculation
-		(vertices (vertices face))) 
-	    ;;look at all faces that contain the vertex
-	    (loop for vertex in vertices 
-	       do (setf normal-faces ())
-	       collect
-	       (normalize! (apply #'vector+ (normal face) (mapcar #'normal 
-						    (remove-if (lambda (nf)
-							     (let ((ce (common-edge nf face)))
-							       (and ce
-								    (not (smoothp ce)))))
-								   (neighbors-at-vertex face vertex))))))))
+;;DOING: need to check smoothity correctly 
+;; TODO: debug why normals arent exactly the same sometimes 
+;;      -> actually it seems they are the same in the first row of a lathed object
+;;      -> in other rows they're not the same
+;;       but i have no idea where things are messing up!
+
+(defreply vertex-normal-in ((vertex =vertex=) (face =face=))
+  (normalize! (apply #'vector+ (normal face) 
+		     (mapcar #'normal 
+			     (remove-if (lambda (nf)
+					  (let ((ce (common-edge nf face)))
+					    (and ce
+						 (not (smoothp ce)))))
+					(neighbors-at-vertex face vertex))))))
+
+(defreply vertex-normals-in ((face =face=))
+  (let (normal-faces
+	(vertices (vertices face))) 
+    ;;look at all faces that contain the vertex
+    (loop for vertex in vertices 
+       do (setf normal-faces ())
+       collect
+       (vertex-normal-in vertex face))))
 
 ;;DONE: fix index loop here
 ;;TODO: rewrite into auto-smooth

@@ -253,13 +253,15 @@
 	  (apply #'3p-average (mapcar 'point (vertices f))))
 
 ;;DONE: corner neighbours, only works on solids for now, returns nil if it detects being on an edge
-;;DOING: :only-smoothp
+;;NOT DOING: :only-smoothp <- doesnt belong here
+;;TODO: extend to non-solid objects with one-partner faces
 (defreply neighbors-at-vertex ((f =face=) (v =vertex=))
   "return neighbouring faces at vertex, perhaps only the ones connected with smooth edges"
 	  (if (not (used-by v f))
 	      (error "trying to get neighbors at a vertex that is not part of the face")
 	      (loop with start-eu = (find v (edge-uses f) :key 'end)
 		 for next-eu = (partner (next-in-face start-eu)) then (partner (next-in-face next-eu))
-		 collect (face next-eu)
 		 when (null next-eu) do (return nil)
-		 until (eq next-eu start-eu))))
+		 until (eq next-eu start-eu)
+		 collect (face next-eu)
+		   )))

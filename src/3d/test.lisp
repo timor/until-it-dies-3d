@@ -44,6 +44,10 @@
 		       #(2 4)
 		       #(1 5)))
 
+(defparameter c2 (apply 'make =curve=
+		       (mapcar (fun (list (car _) t))
+			       (curve-points c1))))
+
 (defparameter r1 (make =rotary=
 		   'curve c1
 		   'numsegs 5))
@@ -75,7 +79,7 @@
 (change-view-to-camera tv)
 
 (defreply update ((cam tv) dt &key)
-	  (orbit-by cam 0 (* dt 10) 0))
+	  (orbit-by cam 0 (* dt 0) 0))
 
 (defreply update ((eng te) dt &key)
 	  (update (current-3dview te) dt))
@@ -102,10 +106,29 @@
       (2 6 5 1)
       (4 7 6 5)))
 
+
+;;try to make sense of these vertex normals
+(loop for f in (faces r1) do (setf (property-value f 'debug) nil)
+   finally (schedule-recompile r1))
+
+(defreply draw :after ((m =meshed=) &key)
+	  (gl:with-pushed-attrib (:lighting-bit)
+	    (gl:disable :lighting)
+	    (loop for f in (faces m) do
+		 (when (property-value f 'debug)
+		   (draw-polygon (mapcar 'point (vertices f)) :filledp nil :color *blue*)))))
+
+(defun debug-face (n &optional (on/off t))
+  (setf (property-value (nth n (faces r1)) 'debug) on/off)
+  (schedule-recompile r1))
+
+(setf (property-value =face= 'color :accessor t) nil)
+
 ;;just for testing now, can only do flat stuff
 (defreply draw ((f =face=) &key)
 	  (let ((n (normal f)))
 	    (gl:with-primitive :polygon
+	      (when (color f) (bind-color (color f)))
 	      (gl:normal (svref n 0) (svref n 1) (svref n 2))
 	      (loop for v in (mapcar #'point (vertices f)) do
 		   (gl:vertex (svref v 0) (svref v 1) (svref v 2))))))
@@ -120,6 +143,8 @@
 
 (loop for f in (list f1 f2 f3) do
      (add-content te f))
+
+
 
 ;;and in the (very likely) case that some (contiuable) error messed up the display, this should fix things:
 (recompile-all te)
