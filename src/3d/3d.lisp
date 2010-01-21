@@ -11,13 +11,6 @@
 ;;DOING: purging hooks
 ;;DOING: purging =container= maybe add later for other purpose
 
-;;containers are for storing other objects, they must keep track of hooks, which may be stored there
-;;hooks are one-time closures, anything else is an update, not a hook
-;;hooks are provided to execute gl commands in the correct context
-
-;;This is called before draw, so that update hooks are processed which need to be done before displaying something
-
-;;kind of like a uid :)
 (defproto =3dsheep= (=engine=)
   (current-3dview
    2d-content

@@ -21,6 +21,7 @@
 		       (:file "topology" :depends-on ("3d"))
 		       (:file "curve" :depends-on ("topology"))
 		       (:file "solid" :depends-on ("3d" "topology" "compile" "curve"))
+		       (:file "noise" :depends-on ("util"))
 		       ))))))
 
 (asdf:defsystem until-it-dies.3d-example

@@ -62,6 +62,9 @@
     (vector (- (* uy vz) (* uz vy))
 	    (- (* uz vx) (* ux vz))
 	    (- (* ux vy) (* uy vx)))))
+;;TODO: maybe make &rest vectors instead of u v
+(defun dot-product (u v)
+  (apply #'+ (map 'list #'* u v)))
 
 (defun vector-between (base tip)
   "compute vector between two points, pointing from base to tip"
@@ -130,3 +133,29 @@
 (defun printv (thing)
   (print-sheeple-object-verbose thing *standard-output*))
 
+;;;=======interpol========
+
+(defun mod* (x div)
+  "actually returns the correct modulus"
+  (if (< x 0)
+      (- (mod x (- div)))
+      (mod x div))) 
+
+;;TODO maybe change arg names
+(defun interpolate-linear (a b x)
+  (+ (* a (- 1 x)) (* b x)))
+
+(defun interpolate-cosine (a b x)
+  (let ((f
+	 (* 0.5 (- 1 (cos (* pi x)) ))))
+    (+ (* a (- 1 f))
+       (* b f))))
+
+(defun interpolate-cubic (x g0 g1)
+  "two-point cubic interpolation of gradient points, with x between 0 and 1"
+  (+ (* g0 (expt (- x 1) 2) x)
+     (* g1 (- x 1) (expt x 2))))
+(defun interpolate-integer-1d (x fun &optional (i-fun 'interpolate-cosine))
+  (let ((y1 (funcall fun (floor  x)))
+	(y2 (funcall fun (ceiling x))))
+    (funcall i-fun y1 y2 (mod x (if (< x 0) -1 1)))))

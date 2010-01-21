@@ -34,7 +34,7 @@
 	       (gl:with-primitive :polygon
 		 (loop
 		    for v in (vertices f) 
-		    for ns in (vertex-normals-in f m) do
+		    for ns in (vertex-normals-in f) do
 		    (apply #'gl:normal (coerce ns 'list))
 		    (apply #'gl:vertex (coerce (point v) 'list)))
 		 ))))

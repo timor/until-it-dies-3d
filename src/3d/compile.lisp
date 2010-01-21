@@ -1,5 +1,6 @@
 ;;; -*- Mode:Lisp; Syntax:ANSI-Common-Lisp; Coding:utf-8 -*-
-;;DOING: changing display list handling to something simpler, making the whole hooks and containers concept uneccessary
+;;TODO: also provide for other compilation abstractions, this is somehow similar to resources, though
+;;DONE: changing display list handling to something simpler, making the whole hooks and containers concept uneccessary
 
 ;;new display list handling:
 ;; * on the first drawing of the object, the display list is assigned and compiled
