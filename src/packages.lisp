@@ -48,7 +48,7 @@
    ;; Engine
    :=engine=
    :*engine*
-   :create-engine
+   :make-engine
    :with-engine
    :runningp
    :initializedp
@@ -82,7 +82,7 @@
    :view-top
    :view-far
    :view-near
-   :create-view
+   :make-view
 
    ;; primitives
    :make-color
@@ -129,12 +129,12 @@
    :=file-texture=
    :bind-texture
    :unbind-texture
-   :create-texture
+   :make-texture
 
    ;; sounds
    :=sound=
    :=file-sound=
-   :create-sound
+   :make-sound
    :source-position
    :source-velocity
    :source-direction
@@ -146,7 +146,7 @@
 
    ;; fonts
    :=font=
-   :create-font
+   :make-font
    :*font*
    :with-font
    :size
@@ -155,11 +155,11 @@
    ;; sprites
    :draw
    :draw-at
-   :create-image
+   :make-image
    :width
    :height
    :filepath
-   :create-animation
+   :make-animation
    :num-frames
    :frame-delay
    :frame-width

@@ -20,8 +20,8 @@
    (num-frames 0)
    (cumulative-mean-fps 0)
    (keys-held-down (make-hash-table))
-   (event-queue (create =event-queue=))
-   (resource-manager (create =resource-manager=))
+   (event-queue (make =event-queue=))
+   (resource-manager (make =resource-manager=))
    (clear-color (make-color :r 0 :g 0 :b 0 :a 0))
    pausedp
    resizablep
@@ -34,7 +34,7 @@
    joysticks
    (window-width 400)
    (window-height 400)
-   (current-view (create =view=))
+   (current-view (make =view=))
    (title "Until It Dies application"))
   :documentation
   "Engines are objects that contain information about
@@ -49,17 +49,17 @@ The engine handles the following aspects of UID applications:
     * General initialization
     * The main loop
 
-It's a good idea to create a delegate of =engine= for each application being created,
+It's a good idea to make a delegate of =engine= for each application being created,
 but it's not a mortal sin to just use it as a singleton.")
 
 (defreply shared-init :after ((engine =engine=) &key)
   (setf (keys-held-down engine) (make-hash-table))
   (unless (direct-property-p engine 'resource-manager)
-    (setf (resource-manager engine) (create =resource-manager=)))
+    (setf (resource-manager engine) (make =resource-manager=)))
   (unless (direct-property-p engine 'event-queue)
-    (setf (event-queue engine) (create =event-queue=)))
+    (setf (event-queue engine) (make =event-queue=)))
   (unless (direct-property-p engine 'current-view)
-    (setf (current-view engine) (create-view 0 0 (window-width engine) (window-height engine) :prototype (current-view engine)))))
+    (setf (current-view engine) (make-view 0 0 (window-width engine) (window-height engine) :prototype (current-view engine)))))
 
 (defreply (setf key-repeat-p) :after (new-value (engine =engine=))
   (when (initializedp engine)
