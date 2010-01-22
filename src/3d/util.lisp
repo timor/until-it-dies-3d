@@ -126,14 +126,8 @@
 	  (* c (point-z point)))
        d :tolerance tolerance)))
 
-;;;;ordered number set:
-;;(defun find-gap-in-ons (ons)
-;;  "returns the first number that is in a gap")
-
 (defun printv (thing)
   (print-sheeple-object-verbose thing *standard-output*))
-
-;;;=======interpol========
 
 (defun mod* (x div)
   "actually returns the correct modulus"
@@ -159,3 +153,13 @@
   (let ((y1 (funcall fun (floor  x)))
 	(y2 (funcall fun (ceiling x))))
     (funcall i-fun y1 y2 (mod x (if (< x 0) -1 1)))))
+
+(defun random-permutate-sequence! (seq)
+  (let ((l (length seq)))
+    (loop for i from 0 below (1- l)
+       for r = (+ i (random (- l i))) do
+	 ;;(format t "swapping ~a with ~a ~%" i r)
+       (psetf (elt seq i) (elt seq r)
+	      (elt seq r) (elt seq i)))
+    seq))
+
