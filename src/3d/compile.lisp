@@ -40,6 +40,9 @@
 	       (ancestorp =compilable= c))
       (schedule-recompile c))))
 
+(defreply run :before ((e =3dsheep=))
+	  (recompile-all e))
+
 (defreply (setf display-list-id) :around (new-val (c =compilable=))
 	  (declare (ignore new-val))
 	  (if (display-list-id c)

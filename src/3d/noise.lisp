@@ -2,8 +2,10 @@
 
 (in-package #:until-it-dies)
 
+
+;;TODO: think about making these things objects, to better debug their mem-requirements and stuff
 ;;TODO: switch from hash-tables to arrays somehow
-;;DOING: 2D-Noise
+;;DOING: ND-Noise with hash functions
 ;;noise generating closures and their henchmen
 
 (defun interpolate-perlin (x)
@@ -31,15 +33,29 @@ for efficiency reasons, the grid size in x must be given"
     (lambda (nx ny)
       (assert (and (>= nx 0) (>= ny 0)))
       (if ( >= nx nxsize)
-	  (error "trying to get noise value at nx=~a, which is bigger than nxsize=~a"nx nxsize)
+	  (error "trying to get noise value at nx=~a, which is bigger than nxsize=~a" nx nxsize)
 	  (let* ((index (+ nx (* nxsize ny)))
 		 (val (gethash index vals)))
 	    (if val 
 		val
 		(setf (gethash index vals) (vector (random 1.0) (random 1.0)))))))))
-;;TODO
+;;DOING
 (defun make-noise-fn-3d (nxsize nysize)
-  )
+  (let ((vals (make-hash-table :test 'eq)))
+    (lambda (nx ny nz)
+      (assert (and (>= nx 0)
+		   (>= ny 0)
+		   (>= nz 0)))
+      (if (or (>= nx nxsize)
+	      (>= ny nysize))
+	  (error "(~a,~a) out of bounds of (~a,~a)" nx ny nxsize nysize)
+	  (let* ((index (+ (* nz nysize nxsize)
+			   (* nxsize ny)
+			   nx))
+		 (val (gethash index vals)))
+	    (if val 
+		val
+		(setf (gethash index vals) (vector (random 1.0) (random 1.0) (random 1.0)))))))))
 
 
 
@@ -105,3 +121,8 @@ for efficiency reasons, the grid size in x must be given"
 	   for a = persistence then (* persistence a)
 	   while (<= f fmax)
 	   sum (* a (funcall 2dpf (* f x) (* f y)))))))
+
+;;===========3d===============
+
+(defun make-one-perlin-noise-3d (nxsize nysize)
+  (let* (())))

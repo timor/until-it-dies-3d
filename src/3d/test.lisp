@@ -93,7 +93,7 @@
 (undefreply update (tv =t=))
 
 (defvar *cam-move-mode* nil)
-(defparameter *camera* tv)
+(defparameter *camera* (current-3dview te))
 
 (defreply mouse-move :after ((e te) x y)
 	  (with-properties ((lastx last-mouse-x) (lasty last-mouse-y)) e
@@ -118,8 +118,6 @@
     (0 (setf *cam-move-mode* nil))))
 
 ;;;===end of mouse cam===
-
-
 (defun v3 (vec)
   (make =vertex= :point vec))
 
@@ -181,7 +179,6 @@
      (add-content te f))
 
 
-
 ;;TODO: debug why display rotation hangs when recompiling :(
 
 ;;2d perlin noise test
@@ -209,6 +206,23 @@
       (loop for x from xmin to xmax by tau do
 	   (loop for y from ymin to ymax by tau do
 		(draw-point (make-point x y (* amplitude (funcall func x y))) :color *yellow*))))))
+
+(defreply recalc ((fd *fun-display*))
+  (setf (func fd) nil)
+  (schedule-recompile fd))
+
+(defreply (setf fmin) :after (new (fd *fun-display*))
+	  (declare (ignore new))
+	  (recalc fd))
+
+(defreply (setf tau) :after (new (fd *fun-display*))
+	  (declare (ignore new))
+	  (recalc fd))
+
+(defreply (setf persistence) :after (new (fd *fun-display*))
+	  (declare (ignore new))	  
+	  (recalc fd))
+
 
 (add-content te *fun-display*)
 
