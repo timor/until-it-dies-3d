@@ -47,6 +47,20 @@
 		       #(2 4)
 		       #(1 5)))
 
+(defparameter c1.5 (make =curve=
+		       #(1 0)
+		       #(2 1)
+		       #(1.5 2)
+		       #(2 3)
+		       #(2 4)
+		       #(1 5)
+		       #(1.5 5.5)
+		       #(0.5 6)))
+
+(defparameter r1.5 (make =rotary=
+			 'curve c1.5
+			 'numsegs 20))
+
 (defparameter c2 (apply 'make =curve=
 		       (mapcar (fun (list (car _) t))
 			       (curve-points c1))))
@@ -94,6 +108,7 @@
 
 (defvar *cam-move-mode* nil)
 (defparameter *camera* (current-3dview te))
+(change-view-to-camera *camera*)
 
 (defreply mouse-move :after ((e te) x y)
 	  (with-properties ((lastx last-mouse-x) (lasty last-mouse-y)) e
@@ -184,28 +199,31 @@
 ;;2d perlin noise test
 (defproto *fun-display* (=3dobject= =compilable=)
   ((xmin 0)
-   (xmax 20)
+   (xmax 30)
    (ymin 0)
-   (ymax 20)
+   (ymax 30)
+   seed
    func
    (fmin 0.5) ;;this determines the period of the largest component
    (tau 0.1) ;;display stepping distance, at min: pixel size on display
    (octaves 20) ;;shouldnt be needed if the sampling rate is known
    (persistence 0.5)
-   (amplitude 10)))
+   (amplitude 2)))
 
 (defreply draw ((fd *fun-display*) &key)
-  (with-properties (fmin xmin xmax ymin ymax tau func persistence amplitude octaves) fd
+  (with-properties (seed fmin xmin xmax ymin ymax tau func persistence amplitude octaves) fd
     (let* ((fmax (* 0.5 (/ 1 tau))))
       (unless func
-	(setf func (make-perlin-noise-2d fmin
-					 ;;(* fmin (expt 2 octaves))
-					 fmax
-					 persistence
-					 (- xmax xmin))))
+	(setf func (make-perlin-noise
+		    ;;fmin
+		    ;;(* fmin (expt 2 octaves))
+		    ;;fmax
+		    ;; persistence
+		    ;;(- xmax xmin)
+		    seed)))
       (loop for x from xmin to xmax by tau do
 	   (loop for y from ymin to ymax by tau do
-		(draw-point (make-point x y (* amplitude (funcall func x y))) :color *yellow*))))))
+		(draw-point (make-point x y (* amplitude (funcall func (vector x y)))) :color *yellow*))))))
 
 (defreply recalc ((fd *fun-display*))
   (setf (func fd) nil)
@@ -220,6 +238,10 @@
 	  (recalc fd))
 
 (defreply (setf persistence) :after (new (fd *fun-display*))
+	  (declare (ignore new))	  
+	  (recalc fd))
+
+(defreply (setf seed) :after (new (fd *fun-display*))
 	  (declare (ignore new))	  
 	  (recalc fd))
 

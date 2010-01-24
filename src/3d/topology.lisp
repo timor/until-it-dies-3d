@@ -11,6 +11,7 @@
 (defproto =vertex= ()
   (point ;;these should be a vector, and a 3d one too
    color      ;;by default unset, can be an opengl color
+   tex-coords ;;texture coordinates, usually 2d
    ))
 
 (defreply print-sheeple-object ((v =vertex=) (stream =stream=))

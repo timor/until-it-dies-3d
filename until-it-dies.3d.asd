@@ -4,7 +4,7 @@
   :maintainer "tim.or@web.de"
   :author "tim.or@web.de"
   :licence "BSD-style"
-  :depends-on (until-it-dies.base cl-glu cl-opengl alexandria)
+  :depends-on (until-it-dies.base until-it-dies.graphics cl-glu cl-opengl alexandria)
   :components
   ((:module "src"
             :components
@@ -22,6 +22,7 @@
 		       (:file "curve" :depends-on ("topology"))
 		       (:file "solid" :depends-on ("3d" "topology" "compile" "curve"))
 		       (:file "noise" :depends-on ("util"))
+		       (:file "material" :depends-on ("noise"))
 		       ))))))
 
 (asdf:defsystem until-it-dies.3d-example

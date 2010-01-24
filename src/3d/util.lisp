@@ -62,6 +62,7 @@
     (vector (- (* uy vz) (* uz vy))
 	    (- (* uz vx) (* ux vz))
 	    (- (* ux vy) (* uy vx)))))
+
 ;;TODO: maybe make &rest vectors instead of u v
 (defun dot-product (u v)
   (apply #'+ (map 'list #'* u v)))
@@ -78,6 +79,13 @@
 (defun vector+ (&rest vecs)
   "vector addition"
   (apply #'map 'vector #'+ vecs))
+
+(defun vector- (v1 &rest vecs)
+  "vector subtraction"
+  (let ((diff (map 'vector #'- v1 (first vecs))))
+    (if (null (cdr vecs))
+	diff
+	(apply #'vector- diff (cdr vecs)))))
 
 (defun normalize! (vec)
   "normalize a simple vector"

@@ -4,7 +4,7 @@
 
 ;;;basic 3d objects===================
 
-;;generic 3d objects that have a position in space
+;;generic 3d objects that have a position in space, and can have textures attached to them
 (defproto =3dobject= ()
   ((x 0)
    (y 0)
@@ -17,8 +17,8 @@
 	  z (elt pos 2))))
 
 ;;do the cool transformation stuff here
-(defreply draw :around ((o =3dobject=) &key no-transform)
-	  (with-properties (x y z) o
+(defreply draw :around ((3dobject =3dobject=) &key no-transform)
+	  (with-properties (x y z) 3dobject
 	    (gl:with-pushed-matrix 
 	      (unless no-transform
 		(gl:translate x y z))
