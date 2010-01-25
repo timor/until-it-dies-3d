@@ -2,13 +2,18 @@
 
 
 ;;this editor is nifty to have around, just make it your parent and youll have a mouse controlled camera
+;;TODO: integrate the provided-res stuff into the asdf file
 
 (in-package #:until-it-dies)
+
+(defvar *provided-resource-directory*
+  (merge-pathnames "provided-res/" (load-time-value (or #.*compile-file-truename* *load-truename*))))
 
 (defproto =editor= =3dsheep=
   ((title "editor mode")
    (last-mouse-x 0)
    (last-mouse-y 0)
+   (hud-font (make =font= :filepath (merge-pathnames "example.otf" *provided-resource-directory*)))
    (cam-move-mode nil)))
 
 (defreply shared-init :after ((editor =editor=) &key)
@@ -48,3 +53,10 @@
   (with-properties (cam-move-mode) e
     (case button 
       (0 (setf cam-move-mode nil)))))
+
+
+;;dunno if we always want this but hey, it would be nice if it worked in teh first place :/
+(defreply draw-2d ((editor =editor=) &key)
+  (with-properties ((font hud-font) window-height window-width) editor
+    (with-font font
+      (draw-at 10 (- window-height 20) (format nil "Mean FPS: ~,3f" (float (uid:mean-fps engine) 1.0))))))

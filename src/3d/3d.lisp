@@ -47,11 +47,11 @@
 ;;DOING: split into draw-2d and draw-3d?
 
 ;;default replies
-(defreply draw-2d ((e =3dsheep=) &key)
-  (draw (2d-content e)))
+(defreply draw-2d ((3ds =3dsheep=) &key)
+  (draw (2d-content 3ds)))
 
-(defreply draw-3d ((e =3dsheep=) &key)
-  (draw (3d-content e)))
+(defreply draw-3d ((3ds =3dsheep=) &key)
+  (draw (3d-content 3ds)))
 
 (defmacro with-pushed-gl-context (&body code)
   `(gl:with-pushed-attrib (:all-attrib-bits)
@@ -66,6 +66,7 @@
     (set-view (current-3dview e))  
     (draw-3d e))
   (with-pushed-gl-context
+    (gl:disable :lighting) ;;debug
     (set-view (current-view e))
     (draw-2d e)))
 
@@ -74,6 +75,9 @@
   (dolist (li l)
     (draw li)))
 
+(defreply draw ((function =function=) &key)
+  (funcall function))
+
 (defreply add-content ((e =3dsheep=) o &key (view :3d))
   "this is the preferred way of adding things to an engine, view can be :2d or :3d"
   (run-in-context e
@@ -81,7 +85,7 @@
       (:2d (pushnew o (2d-content e)))
       (:3d (pushnew o (3d-content e))))))
 
-(defreply remove-content ((e =3dsheep=) (o =3dobject=) &key)
+(defreply remove-content ((e =3dsheep=) o &key)
   "remove content from 2d and 3d view of engine"
   (run-in-context e
     (setf (2d-content e) (remove o (2d-content e)))

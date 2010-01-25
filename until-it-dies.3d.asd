@@ -17,6 +17,7 @@
 		       (:file "3dobject" :depends-on ("messages" "util"))
 		       (:file "camera" :depends-on ("3dobject" "util"))
 		       (:file "3d" :depends-on ("messages" "util" "camera" "3dobject"))
+		       (:file "editor" :depends-on ("camera" "3d"))
 		       (:file "compile" :depends-on ("3d"))
 		       (:file "topology" :depends-on ("3d"))
 		       (:file "curve" :depends-on ("topology"))
