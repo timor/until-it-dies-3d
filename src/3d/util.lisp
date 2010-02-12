@@ -7,6 +7,9 @@
 (in-package #:uid)
 
 (defparameter *tolerance* 1e-5)
+(defparameter 2pi (* 2 pi))
+(defparameter pi/2 (/ pi 2))
+(defparameter pi/4 (/ pi 4))
 
 ;;make-point with floats, needed for glu. not nice, has to go away
 (deftype 3dp ()
@@ -64,8 +67,19 @@
 	    (- (* ux vy) (* uy vx)))))
 
 ;;TODO: maybe make &rest vectors instead of u v
-(defun dot-product (u v)
+(defreply dot-product ((u =vector=) (v =vector=))
   (apply #'+ (map 'list #'* u v)))
+
+(defreply dot-product ((u =number=) (v =number=))
+  (* u v))
+
+(defreply dot-product ((u =number=) (v =vector=))
+  (map 'vector (fun
+		 (* u _)) v))
+
+(defreply dot-product ((u =vector=) (v =number=))
+  (dot-product v u))
+
 
 (defun vector-between (base tip)
   "compute vector between two points, pointing from base to tip"
@@ -75,18 +89,33 @@
       collect (- b a))
    'simple-vector))
 
-
 (defun vector+ (&rest vecs)
   "vector addition"
   (apply #'map 'vector #'+ vecs))
 
-(defun vector- (v1 &rest vecs)
-  "vector subtraction"
-  (let ((diff (map 'vector #'- v1 (first vecs))))
-    (if (null (cdr vecs))
-	diff
-	(apply #'vector- diff (cdr vecs)))))
+(defreply vector- ((v1 =vector=) (v2 =vector=))
+  (map 'vector #'- v1 v2))
 
+(defreply vector- ((v1 =vector=) (a =number=))
+  (map 'vector (fun (- _ a)) v1))
+
+(defreply vector- ((a =number=) (v1 =vector=))
+  (map 'vector (fun (- a _)) v1))
+
+(defun vector-abs (vec)
+  (sqrt (loop for c across vec sum (expt c 2))))
+
+(defun angle-between-vectors (vec1 vec2)
+  (acos (/ (dot-product vec1 vec2)
+	   (* (vector-abs vec1)
+	      (vector-abs vec2)))))
+
+(defun parallel-vectors-p (v1 v2)
+  (let ((angle (angle-between-vectors v1 v2)))
+    (or (tol= pi angle)
+	(tol= 0 angle))))
+
+;;DOING: having this destructive is outright stupid
 (defun normalize! (vec)
   "normalize a simple vector"
   (let ((length (sqrt (loop for a across vec sum
@@ -96,6 +125,11 @@
 	 (setf (svref vec i) (/ e length)))
     vec))
 
+(defun normalize (vec)
+  (let ((length (sqrt (loop for a across vec sum (expt a 2)))))
+    (apply 'vector (loop for vi across vec collect (/ vi length)))))
+
+;;FIXME: maybe rename this to vector-average
 (defun 3p-average (&rest points)
   (map 'vector (fun (/ _ (length points))) (apply #'vector+ points)))
 
@@ -109,6 +143,7 @@
       (min (- max margin) (max (+ min margin) val))
       (min max (max min val))))
 
+;;TODO: move to different file
 ;;plane handling
 (defproto =plane= ()
   ((a 0)
@@ -117,15 +152,56 @@
    (d 0)
    (ref #(1 0 0))))
 
+;;TODO
+(defun make-plane-from-vectors (vec1 vec2)
+  "returns a =plane= object that is spanned by vec1 and vec2")
+
+
+;;TODO: make sure that d is always positive
+(defun make-plane-from-normal (n &optional (dist-spec 0))
+  "define a plane by giving a normal vector and the distance to the
+origin, dist-spec may either be a number, or a point that the plane
+shall contain, if the normal vector would result in a negative distance, it is flipped(IMPORTANT)"
+  (let* ((nn (normalize n))
+	 (d (if (numberp dist-spec)
+		dist-spec
+		(dot-product nn dist-spec))))
+    (when (< d 0)
+      (setf d (- d)
+	    nn (vector- 0 nn)))
+    (make =plane=
+	  'a (svref nn 0)
+	  'b (svref nn 1)
+	  'c (svref nn 2)
+	  'd d)))
+
+(defreply normal ((plane =plane=))
+  "return the normal of the plane. if it was flipped on plane creation, it is flipped here as well"
+  (with-properties (a b c) plane
+    (vector a b c)))
+
 (defreply tol= ((a =number=) (b =number=) &key (tolerance *tolerance*))
   (<= (abs (- a b))
       tolerance))
 
 (defreply tol= ((a =vector=) (b =vector=) &key (tolerance *tolerance*))
-	  (when (= (length a) (length b))
-	    (reduce (lambda (x y) (and x y))
-		    (map 'list (lambda (i j) (tol= i j :tolerance tolerance))
-			 a b))))
+  (when (= (length a) (length b))
+    (reduce (lambda (x y) (and x y))
+	    (map 'list (lambda (i j) (tol= i j :tolerance tolerance))
+		 a b))))
+
+(defreply tol<= ((a =number=) (b =number=) &key (tolerance *tolerance*))
+  (or (< a b)
+      (tol= a b :tolerance tolerance)))
+
+(defreply tol>= ((a =number=) (b =number=) &key (tolerance *tolerance*))
+  (or (> a b)
+      (tol= a b :tolerance tolerance)))
+
+(defreply normal ((plane =plane=))
+  "returns the normalized plane normal vetor"
+  (with-properties (a b c) plane
+      (normalize! (vector a b c))))
 
 (defun point-on-plane (point plane &key (tolerance *tolerance*))
   (with-properties (a b c d) plane
@@ -166,7 +242,7 @@
   (let ((l (length seq)))
     (loop for i from 0 below (1- l)
        for r = (+ i (random (- l i))) do
-	 ;;(format t "swapping ~a with ~a ~%" i r)
+       ;;(format t "swapping ~a with ~a ~%" i r)
        (psetf (elt seq i) (elt seq r)
 	      (elt seq r) (elt seq i)))
     seq))

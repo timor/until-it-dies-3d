@@ -10,7 +10,8 @@
 
 (defproto =gl-texture= (=texture=)
   ((target :texture-2d)
-   )
+   (width 16)
+   (height 16))
   (:documentation "a texture that is not loaded via ilut, but filled directly into the corresponding buffer"))
 
 (defun smartpixels->dumbpixels (vec)
@@ -18,22 +19,34 @@
 returns that and the format. Pixels are expected as floats from 0.0 to
 1.0 and will be converted as needed. values: format type data"
   (assert (> (length vec) 0))
-  (let ((num-of-channels (length (svref vec 0)))
-	(type :unsigned-byte))
+  (let ((num-of-channels (length (svref vec 0))))
     (ecase num-of-channels
       (1 ;;just luminance
-       (values :luminance type (loop
-				  with result-vec = (make-array (length vec))
-				  for pixel across vec
-				  for i from 0 by 1 do
-				  (setf (svref result-vec i) (truncate (* (svref pixel 0) 255)))
-				  finally (return result-vec))))
+       (values :luminance :unsigned-byte (loop
+					    with result-vec = (make-array (length vec))
+					    for pixel across vec
+					    for i from 0 by 1 do
+					    (setf (svref result-vec i) (truncate (clamp (* (svref pixel 0) 255) 0 255)))
+					    finally (return result-vec))))
       (2 ;;luminance and alpha
        (error "TBD"))
-      (3 ;;rgb
-       (error "TBD"))
-      (4 ;; rgba
-       (error "TBD")))))
+      (3 ;;rgb -> argb
+       (smartpixels->dumbpixels (map 'vector (fun
+					       (concatenate 'vector
+							    _
+							    '(1.0)))
+				     vec)))
+      (4 ;; rgba -> argb
+       (values :rgba :unsigned-int-8-8-8-8 (loop
+					      with result-vec = (make-array (length vec) :initial-element #x00000000)
+					      for pixel across vec
+					      for i from 0 by 1 do
+					      (loop for component across pixel
+						 for ubyte-component = (truncate (clamp (* component 255) 0 255))
+						 for shift downfrom 24 by 8 do
+						 (setf (svref result-vec i)
+						       (logior (svref result-vec i) (ash ubyte-component shift))))
+						finally (return result-vec)))))))
 
 (defmessage get-pixel-vector (tex)
   (:documentation "mandatory, must return a valid(tm) vector of pixels, see smartpixels->dumbpixels for what that could be"))
@@ -63,12 +76,17 @@ returns that and the format. Pixels are expected as floats from 0.0 to
   (with-properties (width height buffer) proc-tex
     (loop for y from 0 below width append
 	 (loop for x from 0 below height
-	    for pixel = (generate-pixel proc-tex x y) collect
+	    for pixel = (generate-pixel proc-tex (/ x width ) (/ y height)) collect
 	    (if (vectorp pixel)
 		pixel
 		(vector pixel)))
 	 into lines
 	 finally (return (setf buffer (coerce lines 'vector))))))
+
+(defmessage generate-pixel (procedural-texture x y))
+
+
+
 
 ;;this is just grayscale right now, need an abstraction for colors, perhaps
 ;;TODO: implement channel based materials somehow (RGBA)
@@ -83,8 +101,28 @@ returns that and the format. Pixels are expected as floats from 0.0 to
   (call-next-reply))
 
 (defreply generate-pixel ((tex =perlin-noise-texture=) x y)
-  "returns width x height pixel values (line-wise, so to speak)"
+  "returns width x height pixel values (line-wise, so to speak), x and y are supposed to already be rescaled to be in [0.0 1.0] if scaled with factor 1, for example"
   (with-properties (func width height fmin) tex
     ;;proper rescaling to [0 1]
      (* 0.5
-       (1+ (funcall func (vector (* fmin (/ x width)) (* fmin (/ y height))))))))
+       (1+ (funcall func (vector (* fmin x) (* fmin y)))))))
+
+
+
+(defproto =checker-board-texture= (=procedural-texture=)
+  ((spacing 0.5)
+   (color1 #(1 1 1))
+   (color2 #(0 0 0))
+   (color1-fn (lambda (color x y &optional z)
+		(declare (ignore x y z))
+		color))
+   (color2-fn (lambda (color x y &optional z)
+		(declare (ignore x y z))
+		color))))
+
+(defreply generate-pixel ((cbt =checker-board-texture=) x y)
+  (with-properties (spacing color1 color2 color1-fn color2-fn) cbt
+    (if (evenp (+ (truncate x spacing)
+		  (truncate y spacing)))
+	(funcall color1-fn color1 x y)
+	(funcall color2-fn color2 x y))))

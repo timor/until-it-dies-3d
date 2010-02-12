@@ -25,6 +25,7 @@
 (defproto =compilable= ()
   ((need-recompile t)
    display-list-id
+   bypass ;;used for debugging
    ))
 
 (defreply schedule-recompile ((c =compilable=))
@@ -67,7 +68,7 @@
 
 ;;directly: dont check for recompile, would get recursive
 (defreply draw :around ((o =compilable=) &key directly)
-	  (if directly
+	  (if (or directly (bypass o))
 	      (call-next-reply)
 	      (progn
 		(when (need-recompile o)

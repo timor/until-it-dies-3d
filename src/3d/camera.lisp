@@ -29,7 +29,7 @@
 (defreply set-view ((view =3dview=))
 	  (with-properties (width height fov aspect eye center up) view
 	    ;;(gl:clear :depth-buffer-bit) done by :uid
-	    (gl:viewport 0 0 width height)
+	    ;;perhaps that isnt even needed and only messes up stuff? (gl:viewport 0 0 width height)
 	    (gl:matrix-mode :projection)
 	    (gl:load-identity)
 	    (glu:perspective fov aspect 0.1 1000)

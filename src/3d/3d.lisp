@@ -2,15 +2,6 @@
 
 (in-package #:uid)
 
-;;ACTUALLY: check if below stuff can be accomplished by normal event handling
-;;DONE: containers: may contain other objects, and decide to modify their replies
-;;       more importantly, every object registers its hooks with its container,
-;;TOOD:  which in turn must register them in his, asf.
-
-
-;;DOING: purging hooks
-;;DOING: purging =container= maybe add later for other purpose
-
 (defproto =3dsheep= (=engine=)
   (current-3dview
    2d-content
@@ -61,14 +52,21 @@
        (gl:with-pushed-matrix 
 	 ,@code))))
 
+;;DOING: debugging why Teh Freak 2d display doesnt work
 (defreply draw ((e =3dsheep=) &key)
-  (with-pushed-gl-context
-    (set-view (current-3dview e))  
-    (draw-3d e))
-  (with-pushed-gl-context
-    (gl:disable :lighting) ;;debug
-    (set-view (current-view e))
-    (draw-2d e)))
+  ;;  (with-pushed-gl-context
+  (set-view (current-3dview e))  
+  (draw-3d e)
+  ;;)
+  ;;  (with-pushed-gl-context
+  (gl:disable :lighting)       ;;did nothing :(
+  (gl:clear :depth-buffer-bit) ;;did nothing :(
+  (gl:disable :blend) ;;did nothing :(
+  (gl:disable :color-material) ;;did nothing :(
+  (set-view (current-view e))
+  (draw-2d e)
+  ;;    )
+  )
 
 ;;draw all kinds of things
 (defreply draw ((l =list=) &key)
@@ -92,10 +90,10 @@
     (setf (3d-content e) (remove o (3d-content e)))))
 
 (defreply clear ((e =3dsheep=))
-  "remove all 3d content from engine"
+  "remove all 3d and 2d content from engine"
   (if (runningp e)
       (run-in-context e
-	(loop for c in (3d-content e) do
+	(loop for c in (append (2d-content e) (3d-content e)) do
 	     (remove-content e c)))
       (loop for c in (3d-content e) do
 	   (remove-content e c))))

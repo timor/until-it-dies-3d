@@ -27,8 +27,8 @@
 	    (gl:with-pushed-attrib (:lighting-bit)
 	      (gl:disable :lighting)
 	      (draw-line p0 px :color *red*)
-	      (draw-line p0 py :color *blue*)
-	      (draw-line p0 pz :color *green*))))
+	      (draw-line p0 py :color *green*)
+	      (draw-line p0 pz :color *blue*))))
 
 (defreply mouse-move :after ((e =editor=) x y)
 	  (with-properties ((lastx last-mouse-x) (lasty last-mouse-y)) e
@@ -58,5 +58,7 @@
 ;;dunno if we always want this but hey, it would be nice if it worked in teh first place :/
 (defreply draw-2d ((editor =editor=) &key)
   (with-properties ((font hud-font) window-height window-width) editor
-    (with-font font
-      (draw-at 10 (- window-height 20) (format nil "Mean FPS: ~,3f" (float (uid:mean-fps engine) 1.0))))))
+    (with-color *yellow*
+      (draw-line (make-point 0 0) (make-point 100 100))
+      (with-font font
+	(draw-at 10 (- window-height 20) (format nil "Mean FPS: ~,3f" (float (mean-fps editor) 1.0)))))))

@@ -8,9 +8,7 @@
 (in-package #:uid)
 
 ;;test objects
-(defproto te =3dsheep=
-  ((last-mouse-x 0)
-   (last-mouse-y 0))
+(defproto te =editor=
   )
 
 #+sbcl
@@ -59,7 +57,7 @@
 
 (defparameter r1.5 (make =rotary=
 			 'curve c1.5
-			 'numsegs 20))
+			 'sides 20))
 
 (defparameter c2 (apply 'make =curve=
 		       (mapcar (fun (list (car _) t))
@@ -67,16 +65,32 @@
 
 (defparameter r1 (make =rotary=
 		   'curve c1
-		   'numsegs 5))
-(setf (numsegs r1) 5)
+		   'sides 5))
+;;(setf (sides r1) 5)
 (turn r1)
 (add-content te r1)
 
-(setf (numsegs r1) 12)
+(setf (sides r1) 12)
 
 (turn r1)
 (schedule-recompile r1)
 (move-to r1 #(5 5 0))
+;;wanna see the edge order
+(defreply draw :after ((r r1) &key)
+	  (let ((selected-faces '(0 6)))
+	    (gl:with-pushed-attrib (:lighting-bit :depth-buffer-bit)
+	      (gl:disable :lighting)
+	      (%gl:depth-func :lequal)
+	      (loop for f in (faces r) 
+		 for index from 0 by 1 
+		 when (member index selected-faces) do
+		   (loop for i from 0 below 4
+		      for col in (list *red* *green* *blue* *orange*)
+		      do
+		      (let ((it (nth i (edges f))))
+			(when it
+			  (draw-line (point (start it)) (point (end it)) :color col))))))))
+
 ;;show me the normals:
 (defreply draw :after ((r r1) &key)
 	  (gl:with-pushed-attrib (:lighting-bit)
@@ -91,47 +105,6 @@
 (schedule-recompile r1)
 
 ;;now make a camera
-(defparameter tv (current-3dview te))
-
-(change-view-to-camera tv)
-
-(defreply update ((cam tv) dt &key)
-	  (orbit-by cam 0 (* dt 10) 0))
-
-(defreply update ((eng te) dt &key)
-	  (update (current-3dview te) dt))
-
-
-;;actually drop that whole rotation thingy and make something useful:
-(undefreply update (te =t=) )
-(undefreply update (tv =t=))
-
-(defvar *cam-move-mode* nil)
-(defparameter *camera* (current-3dview te))
-(change-view-to-camera *camera*)
-
-(defreply mouse-move :after ((e te) x y)
-	  (with-properties ((lastx last-mouse-x) (lasty last-mouse-y)) e
-	    (setf lastx x
-		  lasty y)))
-
-(defreply mouse-move ((e te) x y)
-  (with-properties (last-mouse-x last-mouse-y) e
-    (case *cam-move-mode*
-      (:orbit
-       (orbit-by *camera* 0 (- last-mouse-x x) (- y last-mouse-y))))))
-
-(defreply mouse-down ((e te) button)
-  (let ((dist (rho *camera*)))
-    (case button 
-      (0 (setf *cam-move-mode* :orbit))
-      (3 (orbit-by *camera* (- (* dist 0.1)) 0 0))
-      (4 (orbit-by *camera* (* dist 0.1) 0 0)))))
-
-(defreply mouse-up ((e te) button)
-  (case button 
-    (0 (setf *cam-move-mode* nil))))
-
 ;;;===end of mouse cam===
 (defun v3 (vec)
   (make =vertex= :point vec))
@@ -221,9 +194,11 @@
 		    ;; persistence
 		    ;;(- xmax xmin)
 		    seed)))
-      (loop for x from xmin to xmax by tau do
-	   (loop for y from ymin to ymax by tau do
-		(draw-point (make-point x y (* amplitude (funcall func (vector x y)))) :color *yellow*))))))
+      (gl:with-pushed-attrib (:lighting-bit)
+	(gl:disable :lighting)
+	(loop for x from xmin to xmax by tau do
+	     (loop for y from ymin to ymax by tau do
+		  (draw-point (make-point x y (* amplitude (funcall func (vector x y)))) :color *yellow*)))))))
 
 (defreply recalc ((fd *fun-display*))
   (setf (func fd) nil)

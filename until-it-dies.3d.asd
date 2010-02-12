@@ -12,7 +12,8 @@
                       :components
                       (
 		       (:file "export")
-		       (:file "util")
+		       (:file "matrix")
+		       (:file "util" :depends-on ("matrix"))
                        (:file "messages" :depends-on ("util"))
 		       (:file "3dobject" :depends-on ("messages" "util"))
 		       (:file "camera" :depends-on ("3dobject" "util"))
@@ -21,10 +22,15 @@
 		       (:file "compile" :depends-on ("3d"))
 		       (:file "topology" :depends-on ("3d"))
 		       (:file "curve" :depends-on ("topology"))
-		       (:file "solid" :depends-on ("3d" "topology" "compile" "curve"))
 		       (:file "noise" :depends-on ("util"))
 		       (:file "material" :depends-on ("noise"))
-		       ))))))
+		       (:module "geometry"
+				:depends-on ("3d" "topology" "compile" "curve")
+				:components
+				((:file "transformations")
+				 (:file "meshed" :depends-on ("transformations"))
+				 (:file "cuboid" :depends-on ("meshed"))
+				 (:file "rotary" :depends-on ("meshed"))))))))))
 
 (asdf:defsystem until-it-dies.3d-example
   :version "0.1 (unreleased)"

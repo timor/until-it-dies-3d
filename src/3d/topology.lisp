@@ -1,7 +1,7 @@
 ;;; -*- Mode:Lisp; Syntax:ANSI-Common-Lisp; Coding:utf-8 -*-
 ;;DONE: add vertex and face objects
-;;DOING: neighbor messages
-
+;;DOING: neighbor messages wtf?
+;;DOING: add texture coordinate property, only 2d for now, since 3d textures are waaaaaay too memory hungry
 
 ;;important: right now edge-uses that are partners must point to the same edge
 
@@ -11,7 +11,7 @@
 (defproto =vertex= ()
   (point ;;these should be a vector, and a 3d one too
    color      ;;by default unset, can be an opengl color
-   tex-coords ;;texture coordinates, usually 2d
+   ;;(tex-coords #(0 0)) ;;texture coordinates, usually 2d these definitely belong to faces
    ))
 
 (defreply print-sheeple-object ((v =vertex=) (stream =stream=))
@@ -20,7 +20,7 @@
 
 
 ;;=============================Edges==============================
-;;edges are flat by default
+;;edges are bot smooth by default
 (defproto =edge= ()
   ;;vertices
   (start 
@@ -69,7 +69,9 @@
 ;;=====================================Faces======================================
 (defproto =face= ()
   (edge-uses ;;list of edge-uses comprising the loop
-   ;;not a property, but a reply: normal
+   tex-coords ;;list of texture coordinates corresponding to the vertices
+   ;;kicked for now, doesnt fit the concept of materials, really:
+   ;;tex-channel ;;the texture channel this face uses TODO: think about
    ))
 
 ;;perhaps not the best idea to print the verts, but this is best describing the face, after all
@@ -79,8 +81,13 @@
 		    (ignore-errors (point (first (vertices f))))
 		    (ignore-errors (mapcar 'point (rest (vertices f)))))))
 
-(defreply normal ((f =face=))
-	  (apply #'3p-normal (mapcar #'point (subseq (vertices f) 0 3))))
+;;FIXME: this is actually geometry stuff...
+(defreply normal ((face =face=))
+  (apply #'3p-normal (mapcar #'point (subseq (vertices face) 0 3))))
+
+(defreply plane ((face =face=))
+  "return a plane that contains face"
+  (make-plane-from-normal (normal face) (point (first (vertices face)))))
 
 
 ;;hierarchy jumpers:
@@ -266,3 +273,30 @@
 		 until (eq next-eu start-eu)
 		 collect (face next-eu)
 		   )))
+
+
+;;DONE: making that a reply on face and return a list of all the normals
+;;DONE: use half-edgeity to only check concerning faces
+;;DOING: need to check smoothity correctly 
+;; TODO: debug why normals arent exactly the same sometimes 
+;;      -> actually it seems they are the same in the first row of a lathed object
+;;      -> in other rows they're not the same
+;;       but i have no idea where things are messing up!
+
+(defreply vertex-normal-in ((vertex =vertex=) (face =face=))
+  (normalize! (apply #'vector+ (normal face) 
+		     (mapcar #'normal 
+			     (remove-if (lambda (nf)
+					  (let ((ce (common-edge nf face)))
+					    (and ce
+						 (not (smoothp ce)))))
+					(neighbors-at-vertex face vertex))))))
+
+(defreply vertex-normals-in ((face =face=))
+  (let (normal-faces
+	(vertices (vertices face))) 
+    ;;look at all faces that contain the vertex
+    (loop for vertex in vertices 
+       do (setf normal-faces ())
+       collect
+       (vertex-normal-in vertex face))))

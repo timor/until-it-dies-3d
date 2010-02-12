@@ -10,34 +10,23 @@
 
 (defparameter tex (make =perlin-noise-texture= 'width 256 'height 256 'fmin 5))
 
-(defproto =plane= (=3dobject= =textured=)
+(defproto =my-plane= (=rectangle= =textured=)
   ((texture tex)))
 
-(defreply draw ((p =plane=) &key)
-  (gl:with-primitive :quads
-    (gl:tex-coord 0 0)
-    (gl:vertex 0 0)
-    (gl:tex-coord 1 0)
-    (gl:vertex 1 0)
-    (gl:tex-coord 1 1)
-    (gl:vertex 1 1)
-    (gl:tex-coord 0 1)
-    (gl:vertex 0 1)
-    ))
-
 (run-in-thread engine)
-(add-content engine =plane=)
+(add-content engine (make =my-plane=))
 (clear engine)
 
+;;FIXME:see if this gets any better when run from inside
 (defun reload-planes ()
   (clear engine)
   (loop
-     with width = 16
+     with width = 32
      for i from 0 below 64
      for fmin from 0.5 by 2
      for j = (truncate (/ i 8))
      for tex = (make =perlin-noise-texture= 'width width 'height width 'fmin fmin)
-     for plane = (make =plane= 'texture tex 'x (mod i 8) 'y j)
+     for plane = (make =my-plane= 'texture tex 'x (mod i 8) 'y j)
      do
      (format t "plane number ~a has fmin:~a~%" i fmin)
      (add-content engine plane)))
